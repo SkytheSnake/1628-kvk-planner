@@ -750,12 +750,11 @@ async function saveProfile(event){
 
     profile = Array.isArray(data) ? data[0] : data;
 
-    // Re-read from the database so the UI only considers the save complete
-    // once the persisted row confirms the snapshot flag was cleared.
-    await loadProfile();
-
+    // The insert/RPC already returns the saved database row. Use that
+    // directly instead of immediately re-querying by anonymous user_id,
+    // which can briefly return no row while the session/profile link settles.
     if(!profile){
-      throw new Error("Your profile could not be reloaded after saving.");
+      throw new Error("Your profile could not be saved.");
     }
     if(profile.resource_snapshot_required){
       throw new Error("Your resources were saved, but the KvK resource refresh was not marked complete. Please try again.");
