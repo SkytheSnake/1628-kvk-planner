@@ -1,4 +1,4 @@
-window.KVK_CONFIG = {
-  supabaseUrl: "https://aptaltpuwdysqfcnvffy.supabase.co",
-  supabaseKey: "sb_publishable_8jkUO0pTlCuZEYmrwbpR1Q_K1coiv7D"
+window.KVK_CONFIG={
+  supabaseUrl:"https://wpjebexwqwamheqbxhla.supabase.co",
+  supabaseKey:"sb_publishable_wcZsqJwpPLcroWP671RDIg_iRCEBVWJ"
 };
