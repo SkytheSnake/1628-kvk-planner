@@ -580,7 +580,7 @@ function resetProfileDialog(){
 
 function fillProfileFields(data){
   $("playerName").value = data?.player_name || "";
-  $("alliance").value = data?.alliance || "KCB";
+  $("alliance").value = data?.alliance || "ERA";
   $("truegold").value = data?.truegold ?? 0;
   $("general").value = data?.general_speedups ?? 0;
   $("research").value = data?.research_speedups ?? 0;

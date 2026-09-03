@@ -366,7 +366,7 @@ function openManualBooking(){
   $("manualBookingError").hidden=true;
   $("manualPlayerId").value="";
   $("manualPlayerName").value="";
-  $("manualAlliance").value="KCB";
+  $("manualAlliance").value="ERA";
   $("manualBookingDialog").showModal();
 }
 
