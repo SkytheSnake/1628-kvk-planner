@@ -259,7 +259,6 @@ function applyTranslations(){
   if($("submitBtn")) $("submitBtn").textContent = t("submit");
   setText(".my-requests .schedule-header strong", t("my_requests"));
   setText(".my-requests .schedule-header small", t("my_requests_help"));
-  if($("crossoverNote")) $("crossoverNote").textContent = "🔁 " + t("crossover");
 
   document.querySelectorAll(".day-tab").forEach(btn => {
     const day = btn.dataset.day;
@@ -446,7 +445,6 @@ function renderSchedule(){
   renderReplaceWarning();
 
   $("roleTitle").textContent = `${DAYS[currentDay].icon} ${roleText()}`;
-  $("crossoverNote").hidden = currentDay !== "tuesday";
 
   const list = $("slotList");
   list.innerHTML = "";

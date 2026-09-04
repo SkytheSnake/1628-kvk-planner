@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-server-1628-v4-midnight-slots";
+const CACHE_NAME = "kvk-planner-server-1628-v5-no-crossover-note";
 const CORE_ASSETS = [
   "./",
   "./index.html",
