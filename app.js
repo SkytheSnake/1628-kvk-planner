@@ -9,7 +9,7 @@ const $ = id => document.getElementById(id);
 const DAYS = {
   monday: {
     roleKey: "chief", roleDb: "Chief Minister", icon: "🏛️",
-    startDay: "Sunday", startMinute: 23 * 60 + 45, slotCount: 49,
+    startDay: "Monday", startMinute: 0, slotCount: 48,
     tips: {
       good: ["Truegold", "Construction speed up", "Intel missions", "Master skills"],
       ok: ["Charms", "Research speed up"],
@@ -18,7 +18,7 @@ const DAYS = {
   },
   tuesday: {
     roleKey: "chief", roleDb: "Chief Minister", icon: "🏛️",
-    startDay: "Monday", startMinute: 23 * 60 + 45, slotCount: 49,
+    startDay: "Tuesday", startMinute: 0, slotCount: 48,
     tips: {
       good: ["Roulette", "Shards", "Gather rss", "Master skills", "Master emblem", "Manuscript"],
       ok: ["Truegold", "Construction speed up", "Research speed up"],
@@ -27,7 +27,7 @@ const DAYS = {
   },
   thursday: {
     roleKey: "noble", roleDb: "Noble Advisor", icon: "👑",
-    startDay: "Wednesday", startMinute: 23 * 60 + 45, slotCount: 49,
+    startDay: "Thursday", startMinute: 0, slotCount: 48,
     tips: {
       good: ["Charms", "Troop speed up", "Gather rss"],
       ok: ["Forgehammer", "Widgets", "Mithril"],
@@ -222,12 +222,7 @@ function getSlot(day, index){
   const cfg = DAYS[day];
   const start = timePoint(cfg.startDay, cfg.startMinute, index * 30);
   const end = timePoint(cfg.startDay, cfg.startMinute, (index + 1) * 30);
-  let key = `${day}-${index}`;
-
-  // Monday 23:45→Tuesday 00:15 and Tuesday's first slot are the same minister appointment.
-  if((day === "monday" && index === 48) || (day === "tuesday" && index === 0)){
-    key = "chief-crossover";
-  }
+  const key = `${day}-${index}`;
 
   return {
     key,

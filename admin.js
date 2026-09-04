@@ -7,9 +7,9 @@ const t = (key, vars) => I.t(key, vars);
 const $ = id => document.getElementById(id);
 
 const DAYS = {
-  monday: { roleKey:"chief", icon:"🏛️", startDay:"Sunday", startMinute:23*60+45, slotCount:49 },
-  tuesday: { roleKey:"chief", icon:"🏛️", startDay:"Monday", startMinute:23*60+45, slotCount:49 },
-  thursday: { roleKey:"noble", icon:"👑", startDay:"Wednesday", startMinute:23*60+45, slotCount:49 }
+  monday: { roleKey:"chief", icon:"🏛️", startDay:"Monday", startMinute:0, slotCount:48 },
+  tuesday: { roleKey:"chief", icon:"🏛️", startDay:"Tuesday", startMinute:0, slotCount:48 },
+  thursday: { roleKey:"noble", icon:"👑", startDay:"Thursday", startMinute:0, slotCount:48 }
 };
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
@@ -57,8 +57,7 @@ function getSlot(day, index){
   const cfg = DAYS[day];
   const start = timePoint(cfg.startDay, cfg.startMinute, index*30);
   const end = timePoint(cfg.startDay, cfg.startMinute, (index+1)*30);
-  let key = `${day}-${index}`;
-  if((day==="monday" && index===48) || (day==="tuesday" && index===0)) key = "chief-crossover";
+  const key = `${day}-${index}`;
   return {
     key,
     display:`${start.time}–${end.time}`,
