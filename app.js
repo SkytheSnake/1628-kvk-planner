@@ -201,11 +201,25 @@ function applyTheme(theme){
 }
 
 function initLanguage(){
-  const selector = $("languageSelect");
-  if(selector){
-    selector.value = I.current;
-    selector.addEventListener("change", () => I.set(selector.value));
+  const mainSelector = $("languageSelect");
+  const profileSelector = $("profileLanguageSelect");
+
+  const syncLanguageSelectors = () => {
+    if(mainSelector) mainSelector.value = I.current;
+    if(profileSelector) profileSelector.value = I.current;
+  };
+
+  syncLanguageSelectors();
+
+  if(mainSelector){
+    mainSelector.addEventListener("change", () => I.set(mainSelector.value));
   }
+
+  if(profileSelector){
+    profileSelector.addEventListener("change", () => I.set(profileSelector.value));
+  }
+
+  window.addEventListener("kvk-language-changed", syncLanguageSelectors);
 }
 
 function timePoint(startDay, startMinute, offsetMinutes){
@@ -272,6 +286,7 @@ function applyTranslations(){
 
   document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
   setText(".resource-box h3", t("resources"));
+  if($("profileLanguageLabel")) $("profileLanguageLabel").textContent = t("language");
   document.querySelectorAll('[data-close="profileDialog"]').forEach(btn => {
     if(btn.textContent.trim() !== "×") btn.textContent = t("cancel");
   });
