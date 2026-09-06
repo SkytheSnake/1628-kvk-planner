@@ -255,6 +255,34 @@ function setText(selector, value){
   if(el) el.textContent = value;
 }
 
+function translateOpenProfileDialog(){
+  const dialog=$("profileDialog");
+  if(!dialog) return;
+
+  const detailsVisible=!$("profileDetails").hidden;
+  const lookupStatus=$("profileLookupStatus");
+  const isNewProfile=detailsVisible && !profile && $("playerId").disabled;
+  const isResourceRefresh=detailsVisible && !!profile?.resource_snapshot_required;
+
+  if(!detailsVisible){
+    $("profileDialogTitle").textContent=t("find_profile");
+    $("profileIntro").textContent=t("find_intro");
+  }else if(isResourceRefresh){
+    $("profileDialogTitle").textContent=t("update_resources");
+    $("profileIntro").textContent=t("update_resources_intro");
+  }else if(isNewProfile){
+    $("profileDialogTitle").textContent=t("create_profile");
+    $("profileIntro").textContent=t("create_intro");
+    if(lookupStatus && !lookupStatus.hidden) lookupStatus.textContent=t("new_id");
+  }else if(profile){
+    $("profileDialogTitle").textContent=t("my_profile");
+    $("profileIntro").textContent=t("edit_intro");
+  }
+
+  if($("findProfileBtn")) $("findProfileBtn").textContent=t("continue");
+  if($("saveProfileBtn")) $("saveProfileBtn").textContent=t("save");
+}
+
 function applyTranslations(){
   document.title = t("planner");
 
@@ -287,6 +315,7 @@ function applyTranslations(){
   document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
   setText(".resource-box h3", t("resources"));
   if($("profileLanguageLabel")) $("profileLanguageLabel").textContent = t("language");
+  translateOpenProfileDialog();
   document.querySelectorAll('[data-close="profileDialog"]').forEach(btn => {
     if(btn.textContent.trim() !== "×") btn.textContent = t("cancel");
   });
@@ -600,9 +629,9 @@ function openProfile(editExisting=true, forceResourceRefresh=false){
   resetProfileDialog();
 
   if(profile && editExisting){
-    $("profileDialogTitle").textContent = forceResourceRefresh ? "Update your KvK resources" : t("my_profile");
+    $("profileDialogTitle").textContent = forceResourceRefresh ? t("update_resources") : t("my_profile");
     $("profileIntro").textContent = forceResourceRefresh
-      ? "A new KvK cycle has started. Please enter your current resource totals before requesting appointments."
+      ? t("update_resources_intro")
       : t("edit_intro");
     $("playerId").value = profile.player_id;
     $("playerId").disabled = true;
@@ -655,8 +684,8 @@ async function findOrClaimProfile(){
         // The user has already found their profile, so keep the same dialog
         // open and move directly to the resource refresh form.
         profileAutoPromptShown = true;
-        $("profileDialogTitle").textContent = "Update your KvK resources";
-        $("profileIntro").textContent = "Please enter your current resource totals before requesting appointments.";
+        $("profileDialogTitle").textContent = t("update_resources");
+        $("profileIntro").textContent = t("update_resources_intro");
         $("playerId").value = profile.player_id;
         $("playerId").disabled = true;
         $("findProfileBtn").hidden = true;

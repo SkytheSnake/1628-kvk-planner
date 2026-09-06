@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-server-1628-v7-popup-language";
+const CACHE_NAME = "kvk-planner-server-1628-v8-live-popup-translation";
 const CORE_ASSETS = [
   "./",
   "./index.html",
