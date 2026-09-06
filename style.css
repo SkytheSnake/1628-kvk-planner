@@ -742,3 +742,107 @@ html[dir="rtl"] .footer-inner{
     width:100%;
   }
 }
+
+
+/* v6: admin at-a-glance applicants + alliance colours */
+.alliance-confirmed-summary{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:10px 12px 4px;
+}
+.alliance-count{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid currentColor;
+  font-size:11px;
+  font-weight:800;
+  background:rgba(255,255,255,.025);
+}
+.alliance-count strong{
+  min-width:20px;
+  text-align:center;
+  font-size:12px;
+}
+
+/* Alliance palette */
+.alliance-crn{ --alliance-colour:#f06aa6; }
+.alliance-wdg{ --alliance-colour:#5ea9ff; }
+.alliance-era{ --alliance-colour:#52d1bf; }
+.alliance-war{ --alliance-colour:#f0a34f; }
+
+.alliance-count.alliance-crn,
+.alliance-count.alliance-wdg,
+.alliance-count.alliance-era,
+.alliance-count.alliance-war{
+  color:var(--alliance-colour);
+  border-color:color-mix(in srgb,var(--alliance-colour) 65%,transparent);
+  background:color-mix(in srgb,var(--alliance-colour) 10%,transparent);
+}
+
+.admin-slot.confirmed.alliance-crn,
+.admin-slot.confirmed.alliance-wdg,
+.admin-slot.confirmed.alliance-era,
+.admin-slot.confirmed.alliance-war{
+  border-color:color-mix(in srgb,var(--alliance-colour) 70%,var(--border));
+  background:
+    linear-gradient(90deg,color-mix(in srgb,var(--alliance-colour) 12%,transparent),transparent 34%),
+    rgba(16,28,24,.86);
+  box-shadow:inset 3px 0 0 var(--alliance-colour);
+}
+
+.alliance.alliance-crn,
+.alliance.alliance-wdg,
+.alliance.alliance-era,
+.alliance.alliance-war{
+  color:var(--alliance-colour);
+  border-color:var(--alliance-colour);
+  background:color-mix(in srgb,var(--alliance-colour) 12%,transparent);
+}
+
+.pending-player-list{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px 8px;
+}
+.pending-player{
+  --alliance-colour:var(--accent);
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+  padding:2px 0;
+}
+.pending-player.alliance-crn,
+.pending-player.alliance-wdg,
+.pending-player.alliance-era,
+.pending-player.alliance-war{
+  color:var(--text);
+}
+.pending-player strong{
+  font-size:12px;
+  white-space:nowrap;
+}
+.pending-player .alliance{
+  font-size:9px;
+}
+.pending-more{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:700;
+}
+.admin-slot.pending .slot-main{
+  min-width:0;
+}
+@media(max-width:760px){
+  .pending-player-list{
+    gap:4px 6px;
+  }
+  .pending-player strong{
+    font-size:11px;
+  }
+}

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>KvK Planner Admin</title>
-  <link rel="stylesheet" href="style.css?v=20260904-server1628-v4-midnight-slots">
+  <link rel="stylesheet" href="style.css?v=20260906-server1628-v6-admin-glance">
 
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -69,6 +69,13 @@
       <div class="schedule-header">
         <div><strong id="adminRoleTitle">🏛️ Chief Minister</strong><small id="reviewHelp">Click a slot to review applicants.</small></div>
         <div class="badges"><span id="adminPendingBadge" class="badge amber">0 pending</span><span id="adminConfirmedBadge" class="badge green">0 confirmed</span></div>
+      </div>
+
+      <div id="allianceConfirmedSummary" class="alliance-confirmed-summary" aria-label="Confirmed slots by alliance">
+        <span class="alliance-count alliance-crn">CRN <strong id="countCRN">0</strong></span>
+        <span class="alliance-count alliance-wdg">WDG <strong id="countWDG">0</strong></span>
+        <span class="alliance-count alliance-era">ERA <strong id="countERA">0</strong></span>
+        <span class="alliance-count alliance-war">WAR <strong id="countWAR">0</strong></span>
       </div>
       <div class="admin-controls">
         <input id="adminSearch" placeholder="Search player / Player ID">
@@ -216,9 +223,9 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=20260904-server1628-v4-midnight-slots"></script>
-<script src="translations.js?v=20260904-server1628-v4-midnight-slots"></script>
-<script src="admin.js?v=20260904-server1628-v4-midnight-slots"></script>
-  <script src="pwa-init.js?v=20260904-server1628-v4-midnight-slots"></script>
+<script src="config.js?v=20260906-server1628-v6-admin-glance"></script>
+<script src="translations.js?v=20260906-server1628-v6-admin-glance"></script>
+<script src="admin.js?v=20260906-server1628-v6-admin-glance"></script>
+  <script src="pwa-init.js?v=20260906-server1628-v6-admin-glance"></script>
 </body>
 </html>

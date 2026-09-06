@@ -217,6 +217,11 @@ function filteredRequests(){
   });
 }
 
+function allianceClass(alliance){
+  const key=String(alliance||"").toLowerCase();
+  return ["crn","wdg","era","war"].includes(key)?`alliance-${key}`:"";
+}
+
 function renderAdmin(){
   applyTranslations();
   const finalised=dayFinalised(currentDay);
@@ -227,13 +232,13 @@ function renderAdmin(){
   if($("finaliseDayBtn")) $("finaliseDayBtn").hidden=finalised;
   if($("reopenDayBtn")) $("reopenDayBtn").hidden=!finalised || admin?.admin_role!=="owner";
   $("adminRoleTitle").textContent=`${DAYS[currentDay].icon} ${roleText()}`;
-  $("adminCrossoverNote").hidden=currentDay!=="tuesday";
 
   const list=$("adminSlotList");
   list.innerHTML="";
 
   let pendingCount=0;
   let confirmedCount=0;
+  const allianceCounts={CRN:0,WDG:0,ERA:0,WAR:0};
 
   for(let i=0;i<DAYS[currentDay].slotCount;i++){
     const slot=getSlot(currentDay,i);
@@ -241,25 +246,38 @@ function renderAdmin(){
     const appointment=appointmentFor(slot.key);
 
     pendingCount+=pending.length;
-    if(appointment) confirmedCount++;
+    if(appointment){
+      confirmedCount++;
+      const a=String(appointment.alliance||"").toUpperCase();
+      if(Object.prototype.hasOwnProperty.call(allianceCounts,a)) allianceCounts[a]++;
+    }
 
     const row=document.createElement("div");
     row.className=[
       "slot","admin-slot",
-      slot.cross?"cross":"",
       dayFinalised(currentDay)?"readonly-slot":"",
-      appointment?"confirmed":(pending.length?"pending":"")
+      appointment?"confirmed":(pending.length?"pending":""),
+      appointment?allianceClass(appointment.alliance):""
     ].filter(Boolean).join(" ");
+
+    let slotMain="";
+    if(appointment){
+      slotMain=`<span class="alliance ${allianceClass(appointment.alliance)}">${esc(appointment.alliance)}</span><strong>${esc(appointment.player_name)}</strong>`;
+    }else if(pending.length){
+      const shown=pending.slice(0,4);
+      const chips=shown.map(r=>{
+        const p=r.player_profiles||{};
+        return `<span class="pending-player ${allianceClass(p.alliance)}"><span class="alliance ${allianceClass(p.alliance)}">${esc(p.alliance||"")}</span><strong>${esc(p.player_name||"Unknown")}</strong></span>`;
+      }).join("");
+      const extra=pending.length>shown.length?`<span class="pending-more">+${pending.length-shown.length} more</span>`:"";
+      slotMain=`<div class="pending-player-list">${chips}${extra}</div>`;
+    }else{
+      slotMain=`<span class="muted">${t("no_requests")}</span>`;
+    }
 
     row.innerHTML=`
       <div class="slot-time">${slot.display}</div>
-      <div class="slot-main">
-        ${appointment
-          ? `<span class="alliance">${esc(appointment.alliance)}</span><strong>${esc(appointment.player_name)}</strong>`
-          : pending.length
-            ? `<strong>${pending.length} ${t(pending.length===1?"applicant":"applicants")}</strong>`
-            : `<span class="muted">${t("no_requests")}</span>`}
-      </div>
+      <div class="slot-main">${slotMain}</div>
       <div class="slot-status">${appointment?`✓ ${t("confirmed")}`:(pending.length?t("pending_count",{n:pending.length}):"")}</div>`;
 
     row.addEventListener("click",()=>openApplicants(slot));
@@ -268,6 +286,10 @@ function renderAdmin(){
 
   $("adminPendingBadge").textContent=t("pending_count",{n:pendingCount});
   $("adminConfirmedBadge").textContent=t("confirmed_count",{n:confirmedCount});
+  if($("countCRN")) $("countCRN").textContent=allianceCounts.CRN;
+  if($("countWDG")) $("countWDG").textContent=allianceCounts.WDG;
+  if($("countERA")) $("countERA").textContent=allianceCounts.ERA;
+  if($("countWAR")) $("countWAR").textContent=allianceCounts.WAR;
 }
 
 function score(request){
