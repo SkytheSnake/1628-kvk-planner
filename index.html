@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Kingshot KvK Planner</title>
-  <link rel="stylesheet" href="style.css?v=20260906-server1628-v8-live-popup-translation">
+  <link rel="stylesheet" href="style.css?v=20260906-server1628-v9-full-player-translation">
 
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -38,22 +38,22 @@
 <main class="planner-shell">
   <aside class="left-rail">
     <section class="card profile-card">
-      <div class="section-kicker">✦ YOUR PROFILE ✦</div>
+      <div id="yourProfileHeading" class="section-kicker">✦ YOUR PROFILE ✦</div>
       <div class="profile-summary">
-        <div><span>Player ID</span><strong id="profilePlayerId">—</strong></div>
-        <div><span>Player Name</span><strong id="profilePlayerName">—</strong></div>
-        <div><span>Alliance</span><strong id="profileAlliance">—</strong></div>
-        <div><span>Profile Status</span><strong id="profileRailStatus">Required</strong></div>
+        <div><span id="profilePlayerIdLabel">Player ID</span><strong id="profilePlayerId">—</strong></div>
+        <div><span id="profilePlayerNameLabel">Player Name</span><strong id="profilePlayerName">—</strong></div>
+        <div><span id="profileAllianceLabel">Alliance</span><strong id="profileAlliance">—</strong></div>
+        <div><span id="profileStatusLabel">Profile Status</span><strong id="profileRailStatus">Required</strong></div>
       </div>
 
       <div id="profileResources" class="profile-resources" hidden>
-        <div class="profile-resources-title">Resources</div>
+        <div id="profileResourcesTitle" class="profile-resources-title">Resources</div>
         <div class="profile-resource-grid">
-          <div class="profile-resource-item profile-resource-item-wide"><span><img src="resource-truegold.png" alt="Truegold" class="resource-icon">Truegold</span><strong id="profileTruegold">0</strong></div>
-          <div class="profile-resource-item"><span><img src="resource-general.png" alt="General speed up" class="resource-icon">General</span><strong id="profileGeneral">0h</strong></div>
-          <div class="profile-resource-item"><span><img src="resource-research.png" alt="Research speed up" class="resource-icon">Research</span><strong id="profileResearch">0h</strong></div>
-          <div class="profile-resource-item"><span><img src="resource-training.png" alt="Training speed up" class="resource-icon">Training</span><strong id="profileTraining">0h</strong></div>
-          <div class="profile-resource-item"><span><img src="resource-construction.png" alt="Construction speed up" class="resource-icon">Construction</span><strong id="profileConstruction">0h</strong></div>
+          <div class="profile-resource-item profile-resource-item-wide"><span><img src="resource-truegold.png" alt="Truegold" class="resource-icon"><span id="profileTruegoldLabel">Truegold</span></span><strong id="profileTruegold">0</strong></div>
+          <div class="profile-resource-item"><span><img src="resource-general.png" alt="General speed up" class="resource-icon"><span id="profileGeneralLabel">General</span></span><strong id="profileGeneral">0h</strong></div>
+          <div class="profile-resource-item"><span><img src="resource-research.png" alt="Research speed up" class="resource-icon"><span id="profileResearchLabel">Research</span></span><strong id="profileResearch">0h</strong></div>
+          <div class="profile-resource-item"><span><img src="resource-training.png" alt="Training speed up" class="resource-icon"><span id="profileTrainingLabel">Training</span></span><strong id="profileTraining">0h</strong></div>
+          <div class="profile-resource-item"><span><img src="resource-construction.png" alt="Construction speed up" class="resource-icon"><span id="profileConstructionLabel">Construction</span></span><strong id="profileConstruction">0h</strong></div>
         </div>
       </div>
 
@@ -68,7 +68,7 @@
     </section>
 
     <section class="card theme-card">
-      <div class="section-kicker">THEME</div>
+      <div id="themeHeading" class="section-kicker">THEME</div>
       <div class="theme-dots" id="themeDots">
         <button class="theme-dot" data-theme-choice="pink" aria-label="Pink theme"></button>
         <button class="theme-dot" data-theme-choice="purple" aria-label="Purple theme"></button>
@@ -142,8 +142,8 @@
   <footer class="planner-footer">
     <div class="footer-inner">
       <div>
-        <strong>Install the KvK Planner</strong>
-        <small>Add it to your phone or desktop for quick access.</small>
+        <strong id="installPlannerTitle">Install the KvK Planner</strong>
+        <small id="installPlannerHelp">Add it to your phone or desktop for quick access.</small>
       </div>
       <button id="installAppBtn" class="primary install-btn footer-install-btn" type="button" hidden>Install App</button>
     </div>
@@ -221,9 +221,9 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=20260906-server1628-v8-live-popup-translation"></script>
-<script src="translations.js?v=20260906-server1628-v8-live-popup-translation"></script>
-<script src="app.js?v=20260906-server1628-v8-live-popup-translation"></script>
-  <script src="pwa-init.js?v=20260906-server1628-v8-live-popup-translation"></script>
+<script src="config.js?v=20260906-server1628-v9-full-player-translation"></script>
+<script src="translations.js?v=20260906-server1628-v9-full-player-translation"></script>
+<script src="app.js?v=20260906-server1628-v9-full-player-translation"></script>
+  <script src="pwa-init.js?v=20260906-server1628-v9-full-player-translation"></script>
 </body>
 </html>

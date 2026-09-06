@@ -70,12 +70,22 @@ function dayFinalised(day=currentDay){
   return !!daySettings.find(x=>x.event_day===day)?.is_finalised;
 }
 
+function localeForLanguage(){
+  const map={
+    en:"en-GB",zh_tw:"zh-TW",fr:"fr-FR",de:"de-DE",es:"es-ES",tr:"tr-TR",
+    nl:"nl-NL",it:"it-IT",ko:"ko-KR",ja:"ja-JP",fil:"fil-PH",hi:"hi-IN",
+    pa:"pa-IN",pl:"pl-PL",pt:"pt-PT",ru:"ru-RU",ar:"ar",vi:"vi-VN",id:"id-ID"
+  };
+  return map[I.current]||"en-GB";
+}
+
 function tabDateFor(day){
   const offsets={monday:0,tuesday:1,thursday:3};
   const d=new Date(plannerCycleStart()+offsets[day]*86400000);
+  const locale=localeForLanguage();
   return {
-    dow:new Intl.DateTimeFormat("en-GB",{weekday:"short",timeZone:"UTC"}).format(d).toUpperCase(),
-    date:new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",timeZone:"UTC"}).format(d).toUpperCase()
+    dow:new Intl.DateTimeFormat(locale,{weekday:"short",timeZone:"UTC"}).format(d).toUpperCase(),
+    date:new Intl.DateTimeFormat(locale,{day:"numeric",month:"short",timeZone:"UTC"}).format(d).toUpperCase()
   };
 }
 
@@ -193,7 +203,13 @@ function applyTheme(theme){
   const selector = $("themeSelect");
   if(selector) selector.value = theme;
 
-  const names={pink:"Retro Pink",purple:"Electric Purple",teal:"Neon Teal",green:"Matrix Green",blue:"Electric Blue"};
+  const names={
+    pink:t("retro_pink"),
+    purple:t("electric_purple"),
+    teal:t("neon_teal"),
+    green:t("matrix_green"),
+    blue:t("electric_blue")
+  };
   document.querySelectorAll("[data-theme-choice]").forEach(btn=>{
     btn.classList.toggle("active",btn.dataset.themeChoice===theme);
   });
@@ -290,6 +306,21 @@ function applyTranslations(){
   if(brand) brand.innerHTML = `<span class="server-number">1628</span> ⚔️ ${t("planner")}`;
 
   setText('a[href="admin.html"]', t("admin_login"));
+  if($("yourProfileHeading")) $("yourProfileHeading").textContent = `✦ ${t("your_profile").toUpperCase()} ✦`;
+  if($("profilePlayerIdLabel")) $("profilePlayerIdLabel").textContent = t("player_id");
+  if($("profilePlayerNameLabel")) $("profilePlayerNameLabel").textContent = t("player_name");
+  if($("profileAllianceLabel")) $("profileAllianceLabel").textContent = t("alliance");
+  if($("profileStatusLabel")) $("profileStatusLabel").textContent = t("profile_status_label");
+  if($("profileResourcesTitle")) $("profileResourcesTitle").textContent = t("resources");
+  if($("profileTruegoldLabel")) $("profileTruegoldLabel").textContent = t("truegold");
+  if($("profileGeneralLabel")) $("profileGeneralLabel").textContent = t("general_short");
+  if($("profileResearchLabel")) $("profileResearchLabel").textContent = t("research_short");
+  if($("profileTrainingLabel")) $("profileTrainingLabel").textContent = t("training_short");
+  if($("profileConstructionLabel")) $("profileConstructionLabel").textContent = t("construction_short");
+  if($("themeHeading")) $("themeHeading").textContent = t("theme").toUpperCase();
+  if($("installPlannerTitle")) $("installPlannerTitle").textContent = t("install_planner");
+  if($("installPlannerHelp")) $("installPlannerHelp").textContent = t("install_help");
+  if($("installAppBtn")) $("installAppBtn").textContent = t("install_app");
   if($("profileBtn")) $("profileBtn").textContent = t("my_profile");
   if($("roleSmall")) $("roleSmall").textContent = roleText();
   setText(".info-bar strong", t("select_slots"));
@@ -304,7 +335,7 @@ function applyTranslations(){
 
   document.querySelectorAll(".day-tab").forEach(btn => {
     const day = btn.dataset.day;
-    const span = btn.querySelector("span");
+    const span = btn.querySelector("span:not(.tab-date)");
     if(!span) return;
     const textNode = [...span.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
     if(textNode) textNode.textContent = titleText(day);
@@ -437,7 +468,7 @@ function updateProfileGate(){
   if($("profileAlliance")) $("profileAlliance").textContent = loggedIn ? profile.alliance : "—";
   if($("profileRailStatus")) $("profileRailStatus").textContent = !loggedIn
     ? t("profile_required")
-    : (needsResources ? "Update resources" : "Complete");
+    : (needsResources ? t("update_resources_short") : t("complete_status"));
 
   const resources = $("profileResources");
   if(resources){
