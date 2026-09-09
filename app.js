@@ -173,6 +173,7 @@ let myRequests = [];
 let publicActivity = [];
 let daySettings = [];
 let countdownTimer = null;
+let availabilityTimer = null;
 let profilePopupTimer = null;
 let profileAutoPromptScheduled = false;
 let profileAutoPromptShown = false;
@@ -848,6 +849,51 @@ async function saveProfile(event){
   }
 }
 
+function slotLabelForKey(slotKey){
+  for(const day of Object.keys(DAYS)){
+    for(let i=0;i<DAYS[day].slotCount;i++){
+      const slot=getSlot(day,i);
+      if(slot.key===slotKey) return slot.display;
+    }
+  }
+  return slotKey;
+}
+
+async function refreshAvailability({silent=true}={}){
+  const before=new Set(selected);
+
+  const [appointmentsResult,activityResult,settingsResult]=await Promise.all([
+    sb.from("appointments").select("*"),
+    sb.rpc("get_public_slot_activity"),
+    sb.from("day_settings").select("event_day,is_finalised")
+  ]);
+
+  if(appointmentsResult.error) throw appointmentsResult.error;
+  if(activityResult.error) throw activityResult.error;
+  if(settingsResult.error) throw settingsResult.error;
+
+  appointments=appointmentsResult.data||[];
+  publicActivity=activityResult.data||[];
+  daySettings=settingsResult.data||[];
+
+  const newlyUnavailable=[];
+  for(const key of before){
+    if(appointmentFor(key)){
+      selected.delete(key);
+      newlyUnavailable.push(key);
+    }
+  }
+
+  renderSchedule();
+
+  if(newlyUnavailable.length && !silent){
+    const labels=newlyUnavailable.map(slotLabelForKey).join(", ");
+    alert(`Another player has just been confirmed for ${labels}. The planner has refreshed and removed ${newlyUnavailable.length===1?"that slot":"those slots"} from your choices. Please choose another available time.`);
+  }
+
+  return newlyUnavailable;
+}
+
 async function submitRequests(){
   if(dayFinalised(currentDay)){
     alert(t("day_finalised"));
@@ -857,12 +903,53 @@ async function submitRequests(){
     alert(t("deadline_passed"));
     return;
   }
+
+  // Always check the database immediately before submitting. This prevents
+  // a slot that was confirmed after the page loaded from still looking available.
+  try{
+    const conflicts=await refreshAvailability({silent:false});
+    if(conflicts.length) return;
+  }catch(error){
+    console.error(error);
+    alert("The planner could not refresh slot availability. Please try again.");
+    return;
+  }
+
+  if(selected.size<3){
+    alert(t("choose_3_5"));
+    return;
+  }
+
+  const submittedKeys=[...selected];
   const { error } = await sb.rpc("submit_slot_requests", {
     p_event_day: currentDay,
-    p_slot_keys: [...selected]
+    p_slot_keys: submittedKeys
   });
 
   if(error){
+    // A confirmation can still happen in the tiny gap between our pre-check
+    // and the database transaction. If the database reports that conflict,
+    // refresh immediately and show the player exactly what changed.
+    if(/already been confirmed/i.test(error.message||"")){
+      try{
+        const conflicts=await refreshAvailability({silent:true});
+        const conflictKeys=conflicts.length
+          ? conflicts
+          : submittedKeys.filter(key=>appointmentFor(key));
+
+        if(conflictKeys.length){
+          const labels=conflictKeys.map(slotLabelForKey).join(", ");
+          alert(`Another player was confirmed for ${labels} just before you submitted. The planner has refreshed. Please choose another available time.`);
+        }else{
+          alert("One of those slots was confirmed by another player just before you submitted. The planner has refreshed; please review your choices and try again.");
+        }
+      }catch(refreshError){
+        console.error(refreshError);
+        alert("One of those slots was confirmed by another player just before you submitted. Please refresh the page and choose another time.");
+      }
+      return;
+    }
+
     alert(error.message);
     return;
   }
@@ -871,7 +958,6 @@ async function submitRequests(){
   await refresh();
   alert(t("requests_saved"));
 }
-
 async function refresh(){
   await loadProfile();
   await loadSharedData();
@@ -917,6 +1003,17 @@ async function start(){
     await refresh();
     if(countdownTimer) clearInterval(countdownTimer);
     countdownTimer=setInterval(()=>renderDeadline(),30000);
+
+    if(availabilityTimer) clearInterval(availabilityTimer);
+    availabilityTimer=setInterval(async()=>{
+      if(document.hidden) return;
+      try{
+        await refreshAvailability({silent:true});
+      }catch(error){
+        console.warn("Background availability refresh failed:",error);
+      }
+    },15000);
+
     setBanner(`✓ ${t("connected")}`, "ok");
   }catch(error){
     console.error(error);
