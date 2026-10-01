@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>KvK Planner Admin</title>
-  <link rel="stylesheet" href="style.css?v=20260909-server1628-v10-live-availability">
+  <link rel="stylesheet" href="style.css?v=20260906-server1628-v8-live-popup-translation">
 
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -40,6 +40,24 @@
       <label class="field-label"><span id="loginPasswordLabel">Password</span><input id="loginPassword" type="password" autocomplete="current-password" required></label>
       <div id="loginError" class="form-error" hidden></div>
       <button class="primary login-submit" type="submit">Log in</button>
+      <button id="forgotPasswordBtn" class="secondary" type="button" style="width:100%;margin-top:8px">Forgot password?</button>
+    </form>
+    <form id="forgotPasswordForm" hidden style="margin-top:12px">
+      <label class="field-label"><span>Email address</span><input id="forgotPasswordEmail" type="email" autocomplete="email" required></label>
+      <div id="forgotPasswordStatus" class="form-error" hidden></div>
+      <button class="primary" type="submit">Send password reset email</button>
+      <button id="backToLoginBtn" class="secondary" type="button" style="width:100%;margin-top:8px">Back to login</button>
+    </form>
+  </section>
+
+  <section id="passwordRecoveryCard" class="card login-card" hidden>
+    <h2>Choose a new password</h2>
+    <p class="muted">Enter a new password for your KvK Planner admin account.</p>
+    <form id="passwordRecoveryForm">
+      <label class="field-label"><span>New password</span><input id="recoveryPassword" type="password" minlength="8" autocomplete="new-password" required></label>
+      <label class="field-label"><span>Confirm new password</span><input id="recoveryPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required></label>
+      <div id="passwordRecoveryStatus" class="form-error" hidden></div>
+      <button id="passwordRecoverySubmit" class="primary" type="submit">Change password</button>
     </form>
   </section>
 
@@ -223,9 +241,9 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=20260909-server1628-v10-live-availability"></script>
-<script src="translations.js?v=20260909-server1628-v10-live-availability"></script>
-<script src="admin.js?v=20260909-server1628-v10-live-availability"></script>
-  <script src="pwa-init.js?v=20260909-server1628-v10-live-availability"></script>
+<script src="config.js?v=20260906-server1628-v8-live-popup-translation"></script>
+<script src="translations.js?v=20260906-server1628-v8-live-popup-translation"></script>
+<script src="admin.js?v=20261001-password-recovery"></script>
+  <script src="pwa-init.js?v=20260906-server1628-v8-live-popup-translation"></script>
 </body>
 </html>

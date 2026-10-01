@@ -22,6 +22,30 @@ let rejectionLog = [];
 let activityLog=[];
 let daySettings=[];
 let history=[];
+let recoveryMode = false;
+
+function showRecoveryForm(){
+  recoveryMode=true;
+  $("adminLoginCard").hidden=true;
+  $("adminApp").hidden=true;
+  $("logoutBtn").hidden=true;
+  $("passwordRecoveryCard").hidden=false;
+}
+
+function hideRecoveryForm(){
+  recoveryMode=false;
+  $("passwordRecoveryCard").hidden=true;
+}
+
+function recoveryRedirectUrl(){
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+function looksLikeRecoveryUrl(){
+  const params=new URLSearchParams(window.location.search);
+  const hashParams=new URLSearchParams(window.location.hash.replace(/^#/,""));
+  return params.get("type")==="recovery" || hashParams.get("type")==="recovery";
+}
 
 const esc = value => String(value ?? "")
   .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
@@ -143,6 +167,8 @@ function setAdminSection(view="planner"){
 }
 
 function showAdminApp(show){
+  if(recoveryMode && show) return;
+  $("passwordRecoveryCard").hidden=true;
   $("adminLoginCard").hidden=show;
   $("adminApp").hidden=!show;
   $("logoutBtn").hidden=!show;
@@ -630,6 +656,74 @@ async function changeManagedAdminPassword(event){
   }
 }
 
+async function requestPasswordReset(event){
+  event.preventDefault();
+  const status=$("forgotPasswordStatus");
+  const email=$("forgotPasswordEmail").value.trim();
+  status.hidden=true;
+  status.className="form-error";
+
+  const { error }=await sb.auth.resetPasswordForEmail(email,{
+    redirectTo:recoveryRedirectUrl()
+  });
+
+  status.hidden=false;
+  if(error){
+    status.textContent=error.message||"Unable to send password reset email.";
+    return;
+  }
+  status.textContent="Password reset email sent. Open the link in that email to choose a new password.";
+}
+
+async function submitRecoveredPassword(event){
+  event.preventDefault();
+  const password=$("recoveryPassword").value;
+  const confirmPassword=$("recoveryPasswordConfirm").value;
+  const status=$("passwordRecoveryStatus");
+  const button=$("passwordRecoverySubmit");
+  status.hidden=true;
+  status.className="form-error";
+
+  if(password.length<8){
+    status.textContent="Password must be at least 8 characters.";
+    status.hidden=false;
+    return;
+  }
+  if(password!==confirmPassword){
+    status.textContent="The passwords do not match.";
+    status.hidden=false;
+    return;
+  }
+
+  button.disabled=true;
+  button.textContent="Changing…";
+  const { error }=await sb.auth.updateUser({password});
+  button.disabled=false;
+  button.textContent="Change password";
+
+  if(error){
+    status.textContent=error.message||"Unable to change password.";
+    status.hidden=false;
+    return;
+  }
+
+  await sb.auth.signOut();
+  hideRecoveryForm();
+  $("adminLoginCard").hidden=false;
+  $("loginPassword").value="";
+  status.textContent="Password changed successfully.";
+  status.hidden=false;
+  alert("Password changed successfully. You can now log in with your new password.");
+  history.replaceState({},document.title,recoveryRedirectUrl());
+}
+
+function bindAuthRecovery(){
+  if(looksLikeRecoveryUrl()) showRecoveryForm();
+  sb.auth.onAuthStateChange((event)=>{
+    if(event==="PASSWORD_RECOVERY") showRecoveryForm();
+  });
+}
+
 function bindEvents(){
   document.querySelectorAll(".admin-section-tab").forEach(btn=>{
     btn.addEventListener("click",()=>setAdminSection(btn.dataset.adminView));
@@ -647,6 +741,18 @@ function bindEvents(){
   $("manualBookingForm").addEventListener("submit",submitManualBooking);
   $("resetKvkBtn").addEventListener("click",resetKvk);
   if($("adminPasswordForm")) $("adminPasswordForm").addEventListener("submit",changeManagedAdminPassword);
+  $("forgotPasswordBtn").addEventListener("click",()=>{
+    $("loginForm").hidden=true;
+    $("forgotPasswordForm").hidden=false;
+    const raw=$("loginIdentity").value.trim();
+    if(raw.includes("@")) $("forgotPasswordEmail").value=raw;
+  });
+  $("backToLoginBtn").addEventListener("click",()=>{
+    $("forgotPasswordForm").hidden=true;
+    $("loginForm").hidden=false;
+  });
+  $("forgotPasswordForm").addEventListener("submit",requestPasswordReset);
+  $("passwordRecoveryForm").addEventListener("submit",submitRecoveredPassword);
   $("loginForm").addEventListener("submit",async event=>{
     event.preventDefault();
     $("loginError").hidden=true;
@@ -707,7 +813,10 @@ async function start(){
   initTheme();
   initLanguage();
   applyTranslations();
+  bindAuthRecovery();
   bindEvents();
+
+  if(recoveryMode) return;
 
   if(await checkAdmin()){
     showAdminApp(true);

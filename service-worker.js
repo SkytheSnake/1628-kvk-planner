@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-server-1628-v10-live-availability";
+const CACHE_NAME = "kvk-planner-server-1628-v10-password-recovery";
 const CORE_ASSETS = [
   "./",
   "./index.html",
