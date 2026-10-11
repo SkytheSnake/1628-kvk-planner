@@ -4,17 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <script>
-    // If Supabase sends a password-recovery link to the main planner URL,
-    // forward it to the admin recovery screen while preserving the auth payload.
-    (() => {
-      const q = new URLSearchParams(window.location.search);
-      const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      const isRecovery = q.get("type") === "recovery" || h.get("type") === "recovery";
-      const hasRecoveryCode = q.has("code");
-      if (isRecovery || hasRecoveryCode) {
-        window.location.replace(`admin.html${window.location.search}${window.location.hash}`);
-      }
-    })();
+    if (new URLSearchParams(window.location.search).has("token")) {
+      window.location.replace(`admin.html${window.location.search}`);
+    }
   </script>
   <title>Kingshot KvK Planner</title>
   <link rel="stylesheet" href="style.css?v=20260906-server1628-v9-full-player-translation">
@@ -233,10 +225,10 @@
   </form>
 </dialog>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=20260906-server1628-v9-full-player-translation"></script>
+<script src="config.js?v=neon-1"></script>
 <script src="translations.js?v=20260906-server1628-v9-full-player-translation"></script>
-<script src="app.js?v=20260906-server1628-v9-full-player-translation"></script>
+<script type="module" src="app.js?v=neon-1"></script>
   <script src="pwa-init.js?v=20260906-server1628-v9-full-player-translation"></script>
 </body>
 </html>
+

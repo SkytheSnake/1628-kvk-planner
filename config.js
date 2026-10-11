@@ -1,4 +1,4 @@
-window.KVK_CONFIG={
-  supabaseUrl:"https://wpjebexwqwamheqbxhla.supabase.co",
-  supabaseKey:"sb_publishable_wcZsqJwpPLcroWP671RDIg_iRCEBVWJ"
+window.KVK_CONFIG = {
+  neonAuthUrl: "https://ep-raspy-hat-zanuzcit.neonauth.c-2.eu-west-2.aws.neon.tech/neondb/auth",
+  neonDataApiUrl: "https://ep-raspy-hat-zanuzcit.apirest.c-2.eu-west-2.aws.neon.tech/neondb/rest/v1"
 };

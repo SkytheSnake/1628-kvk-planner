@@ -1,7 +1,8 @@
+import { backend as sb } from './backend.js?v=neon-1';
 (() => {
 "use strict";
 
-const sb = window.supabase.createClient(window.KVK_CONFIG.supabaseUrl, window.KVK_CONFIG.supabaseKey);
+
 const I = window.KVK_I18N;
 const t = (key, vars) => I.t(key, vars);
 const $ = id => document.getElementById(id);
@@ -44,7 +45,7 @@ function recoveryRedirectUrl(){
 function looksLikeRecoveryUrl(){
   const params=new URLSearchParams(window.location.search);
   const hashParams=new URLSearchParams(window.location.hash.replace(/^#/,""));
-  return params.get("type")==="recovery" || hashParams.get("type")==="recovery";
+  return params.has("token");
 }
 
 const esc = value => String(value ?? "")
@@ -137,8 +138,8 @@ function applyTranslations(){
 }
 
 async function checkAdmin(){
-  const { data:{session} } = await sb.auth.getSession();
-  if(!session || session.user.is_anonymous) return false;
+  const { data: session, error: sessionError } = await sb.auth.getSession();
+  if(sessionError || !session?.user) return false;
 
   const { data, error } = await sb
     .from("admin_users")
@@ -580,82 +581,6 @@ async function archiveCurrentCycle(){
 }
 
 
-async function changeManagedAdminPassword(event){
-  event.preventDefault();
-  if(admin?.admin_role!=="owner") return;
-
-  const role=$("passwordTargetRole").value;
-  const password=$("newAdminPassword").value;
-  const confirmPassword=$("confirmAdminPassword").value;
-  const status=$("adminPasswordStatus");
-  const button=$("changeAdminPasswordBtn");
-
-  status.hidden=true;
-  status.className="password-status";
-
-  if(!["king","minister"].includes(role)){
-    status.textContent="Only the King and Minister accounts can be changed here.";
-    status.classList.add("error");
-    status.hidden=false;
-    return;
-  }
-
-  if(password.length<8){
-    status.textContent="Password must be at least 8 characters.";
-    status.classList.add("error");
-    status.hidden=false;
-    return;
-  }
-
-  if(password!==confirmPassword){
-    status.textContent="The passwords do not match.";
-    status.classList.add("error");
-    status.hidden=false;
-    return;
-  }
-
-  const label=role==="king" ? "King" : "Minister";
-  if(!confirm(`Change the ${label} account password?`)) return;
-
-  button.disabled=true;
-  button.textContent="Changing…";
-
-  try{
-    const { data,error }=await sb.functions.invoke("change-admin-password",{
-      body:{targetRole:role,password}
-    });
-
-    if(error){
-      let message=error.message||"Unable to change password.";
-      try{
-        if(error.context){
-          const body=await error.context.json();
-          if(body?.error) message=body.error;
-        }
-      }catch(_){}
-      throw new Error(message);
-    }
-
-    if(!data?.success){
-      throw new Error(data?.error||"Unable to change password.");
-    }
-
-    $("newAdminPassword").value="";
-    $("confirmAdminPassword").value="";
-    status.textContent=`✓ ${label} password changed successfully.`;
-    status.classList.add("success");
-    status.hidden=false;
-  }catch(error){
-    console.error(error);
-    status.textContent=error.message||"Unable to change password.";
-    status.classList.add("error");
-    status.hidden=false;
-  }finally{
-    button.disabled=false;
-    button.textContent="Change Password";
-  }
-}
-
 async function requestPasswordReset(event){
   event.preventDefault();
   const status=$("forgotPasswordStatus");
@@ -663,7 +588,7 @@ async function requestPasswordReset(event){
   status.hidden=true;
   status.className="form-error";
 
-  const { error }=await sb.auth.resetPasswordForEmail(email,{
+  const { error }=await sb.auth.requestPasswordReset({email,
     redirectTo:recoveryRedirectUrl()
   });
 
@@ -697,7 +622,7 @@ async function submitRecoveredPassword(event){
 
   button.disabled=true;
   button.textContent="Changing…";
-  const { error }=await sb.auth.updateUser({password});
+  const { error }=await sb.auth.resetPassword({newPassword:password,token:new URLSearchParams(window.location.search).get("token")});
   button.disabled=false;
   button.textContent="Change password";
 
@@ -714,14 +639,12 @@ async function submitRecoveredPassword(event){
   status.textContent="Password changed successfully.";
   status.hidden=false;
   alert("Password changed successfully. You can now log in with your new password.");
-  history.replaceState({},document.title,recoveryRedirectUrl());
+  window.history.replaceState({},document.title,recoveryRedirectUrl());
 }
 
 function bindAuthRecovery(){
   if(looksLikeRecoveryUrl()) showRecoveryForm();
-  sb.auth.onAuthStateChange((event)=>{
-    if(event==="PASSWORD_RECOVERY") showRecoveryForm();
-  });
+
 }
 
 function bindEvents(){
@@ -740,7 +663,6 @@ function bindEvents(){
   $("manualAddBtn").addEventListener("click",openManualBooking);
   $("manualBookingForm").addEventListener("submit",submitManualBooking);
   $("resetKvkBtn").addEventListener("click",resetKvk);
-  if($("adminPasswordForm")) $("adminPasswordForm").addEventListener("submit",changeManagedAdminPassword);
   $("forgotPasswordBtn").addEventListener("click",()=>{
     $("loginForm").hidden=true;
     $("forgotPasswordForm").hidden=false;
@@ -762,7 +684,7 @@ function bindEvents(){
       ? raw
       : `${raw.toLowerCase().replace(/[^a-z0-9._-]/g,"")}@kvk-planner.local`;
 
-    const { error }=await sb.auth.signInWithPassword({
+    const { error }=await sb.auth.signIn.email({
       email,
       password:$("loginPassword").value
     });
