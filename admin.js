@@ -603,11 +603,14 @@ async function changeManagedAdminPassword(event){
   button.disabled=true;
   button.textContent="Changing…";
   try{
-    const {data:account,error:lookupError}=await sb.from("admin_users").select("id").eq("admin_role",role).single();
+    const {data:accountId,error:lookupError}=await sb.rpc("get_managed_admin_user",{p_admin_role:role},{get:true});
     if(lookupError) throw lookupError;
-    const {error}=await sb.auth.admin.setUserPassword({userId:account.id,newPassword:password});
+    if(typeof accountId!=="string" || !accountId){
+      throw new Error("The selected admin account could not be found. Please refresh and try again.");
+    }
+    const {error}=await sb.auth.admin.setUserPassword({userId:accountId,newPassword:password});
     if(error) throw error;
-    const {error:sessionError}=await sb.auth.admin.revokeUserSessions({userId:account.id});
+    const {error:sessionError}=await sb.auth.admin.revokeUserSessions({userId:accountId});
     if(sessionError) throw new Error("Password changed, but existing sessions could not be signed out. "+sessionError.message);
     $("adminPasswordForm").reset();
     status.textContent=`${role === "king" ? "King" : "Minister"} password changed successfully.`;

@@ -977,3 +977,25 @@ CREATE INDEX idx_slot_requests_day_slot_status ON public.slot_requests USING btr
 CREATE INDEX idx_slot_requests_profile_day ON public.slot_requests USING btree (profile_id, event_day);
 
 REVOKE INSERT (user_id, player_id, player_name, alliance, truegold, general_speedups, research_speedups, training_speedups, construction_speedups, resource_snapshot_required, resource_updated_at) ON public.player_profiles FROM anonymous,authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_managed_admin_user(p_admin_role text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE v_id uuid;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.admin_users WHERE id=auth.uid() AND admin_role='owner') THEN
+    RAISE EXCEPTION 'Owner access required';
+  END IF;
+  IF p_admin_role NOT IN ('king','minister') OR p_admin_role IS NULL THEN
+    RAISE EXCEPTION 'Only King and Minister passwords can be managed here';
+  END IF;
+  SELECT id INTO STRICT v_id FROM public.admin_users WHERE admin_role=p_admin_role;
+  RETURN v_id;
+EXCEPTION WHEN NO_DATA_FOUND THEN
+  RAISE EXCEPTION 'The selected admin account is not configured';
+WHEN TOO_MANY_ROWS THEN
+  RAISE EXCEPTION 'More than one account has the selected admin role';
+END;
+$$;
+REVOKE ALL ON FUNCTION public.get_managed_admin_user(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_managed_admin_user(text) TO authenticated;
+NOTIFY pgrst,'reload schema';
