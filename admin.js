@@ -581,6 +581,47 @@ async function archiveCurrentCycle(){
 }
 
 
+async function changeManagedAdminPassword(event){
+  event.preventDefault();
+  if(admin?.admin_role!=="owner") return;
+  const role=$("passwordTargetRole").value;
+  const password=$("newAdminPassword").value;
+  const status=$("adminPasswordStatus");
+  const button=$("changeAdminPasswordBtn");
+  status.hidden=true;
+  status.className="password-status";
+  if(!["king","minister"].includes(role)) return;
+  if(password.length<8 || password.length>128){
+    status.textContent="Password must be between 8 and 128 characters.";
+    status.classList.add("error"); status.hidden=false; return;
+  }
+  if(password!==$("confirmAdminPassword").value){
+    status.textContent="The passwords do not match.";
+    status.classList.add("error"); status.hidden=false; return;
+  }
+  if(!confirm(`Change the ${role === "king" ? "King" : "Minister"} account password?`)) return;
+  button.disabled=true;
+  button.textContent="Changing…";
+  try{
+    const {data:account,error:lookupError}=await sb.from("admin_users").select("id").eq("admin_role",role).single();
+    if(lookupError) throw lookupError;
+    const {error}=await sb.auth.admin.setUserPassword({userId:account.id,newPassword:password});
+    if(error) throw error;
+    const {error:sessionError}=await sb.auth.admin.revokeUserSessions({userId:account.id});
+    if(sessionError) throw new Error("Password changed, but existing sessions could not be signed out. "+sessionError.message);
+    $("adminPasswordForm").reset();
+    status.textContent=`${role === "king" ? "King" : "Minister"} password changed successfully.`;
+    status.classList.add("success");
+  }catch(error){
+    status.textContent=error.message || "Unable to change password.";
+    status.classList.add("error");
+  }finally{
+    status.hidden=false;
+    button.disabled=false;
+    button.textContent="Change Password";
+  }
+}
+
 async function requestPasswordReset(event){
   event.preventDefault();
   const status=$("forgotPasswordStatus");
@@ -648,6 +689,7 @@ function bindAuthRecovery(){
 }
 
 function bindEvents(){
+  $("adminPasswordForm").addEventListener("submit",changeManagedAdminPassword);
   document.querySelectorAll(".admin-section-tab").forEach(btn=>{
     btn.addEventListener("click",()=>setAdminSection(btn.dataset.adminView));
   });

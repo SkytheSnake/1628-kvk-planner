@@ -177,9 +177,38 @@
       </section>
 
       <section id="adminPasswordManager" class="card owner-only-section" hidden>
-        <strong>Admin Account Passwords</strong>
-        <p>Manage King and Minister account passwords in your Neon project's Auth console.</p>
-      </section>
+      <div class="schedule-header">
+        <div>
+          <strong>Admin Account Passwords</strong>
+          <small>Owner only · change the King or Minister login password.</small>
+        </div>
+      </div>
+      <form id="adminPasswordForm" class="admin-password-form">
+        <label class="field-label">
+          <span>Account</span>
+          <select id="passwordTargetRole" required>
+            <option value="king">King</option>
+            <option value="minister">Minister</option>
+          </select>
+        </label>
+
+        <label class="field-label">
+          <span>New password</span>
+          <input id="newAdminPassword" type="password" minlength="8" autocomplete="new-password" required>
+        </label>
+
+        <label class="field-label">
+          <span>Confirm new password</span>
+          <input id="confirmAdminPassword" type="password" minlength="8" autocomplete="new-password" required>
+        </label>
+
+        <div id="adminPasswordStatus" class="password-status" hidden></div>
+
+        <button id="changeAdminPasswordBtn" class="primary" type="submit">
+          Change Password
+        </button>
+      </form>
+    </section>
     </section>
 
   </div>
