@@ -999,3 +999,6 @@ $$;
 REVOKE ALL ON FUNCTION public.get_managed_admin_user(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_managed_admin_user(text) TO authenticated;
 NOTIFY pgrst,'reload schema';
+
+-- Resolve the verified JWT identity under the function owner when called from RLS.
+ALTER FUNCTION public.kvk_player_actor() SECURITY DEFINER;

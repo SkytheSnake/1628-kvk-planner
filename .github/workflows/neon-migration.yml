@@ -1,7 +1,7 @@
 name: Neon migration checks
 on:
   push:
-    branches: [codex/neon-migration]
+    branches: [codex/neon-migration, main]
 permissions:
   contents: read
 jobs:
@@ -29,3 +29,4 @@ jobs:
           CONFIG
           python -m http.server 8000 > /tmp/planner-http.log 2>&1 &
       - run: node scripts/neon-smoke.mjs
+      - run: node scripts/admin-render-smoke.mjs
