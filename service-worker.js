@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-server-1628-v11-recovery-forward";
+const CACHE_NAME = "kvk-planner-1628-neon-1";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const CORE_ASSETS = [
   "./app.js",
   "./admin.js",
   "./config.js",
+  "./backend.js",
   "./translations.js",
   "./manifest.webmanifest",
   "./favicon.ico",

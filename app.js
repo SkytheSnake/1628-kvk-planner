@@ -1,7 +1,8 @@
+import { backend as sb, playerRpc, playerDeviceId } from './backend.js?v=neon-1';
 (() => {
 "use strict";
 
-const sb = window.supabase.createClient(window.KVK_CONFIG.supabaseUrl, window.KVK_CONFIG.supabaseKey);
+
 const I = window.KVK_I18N;
 const t = (key, vars) => I.t(key, vars);
 const $ = id => document.getElementById(id);
@@ -360,22 +361,11 @@ function setBanner(message, kind=""){
 }
 
 async function ensureAnonymousAuth(){
-  const { data: { session } } = await sb.auth.getSession();
-  if(session){ user = session.user; return; }
-
-  const { data, error } = await sb.auth.signInAnonymously();
-  if(error) throw new Error("Anonymous sign-in is not enabled in Supabase.");
-  user = data.user;
+  user = { id: playerDeviceId() };
 }
 
 async function loadProfile(){
-  const { data, error } = await sb
-    .from("player_profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending:false })
-    .limit(1);
-
+  const { data, error } = await playerRpc("get_player_profile");
   if(error) throw error;
   profile = data?.[0] || null;
 }
@@ -396,10 +386,7 @@ async function loadSharedData(){
   daySettings = daySettingsResult.data || [];
 
   if(profile){
-    const { data, error } = await sb
-      .from("slot_requests")
-      .select("id,slot_key,event_day,minister_role,status")
-      .eq("profile_id", profile.id);
+    const { data, error } = await playerRpc("get_player_requests");
 
     if(error) throw error;
     myRequests = data || [];
@@ -696,18 +683,11 @@ async function findOrClaimProfile(){
   $("findProfileBtn").textContent = t("checking");
 
   try{
-    const { data: profileId, error } = await sb.rpc("claim_player_profile", { p_player_id: playerId });
+    const { data: profileId, error } = await playerRpc("claim_player_profile", { p_player_id: playerId });
     if(error) throw error;
 
     if(profileId){
       await loadProfile();
-
-      // Fallback if PostgREST/session state is one tick behind.
-      if(!profile){
-        const direct = await sb.from("player_profiles").select("*").eq("id", profileId).maybeSingle();
-        if(direct.error) throw direct.error;
-        profile = direct.data;
-      }
 
       await loadSharedData();
 
@@ -783,7 +763,7 @@ async function saveProfile(event){
     if(profile){
       // SECURITY DEFINER RPC avoids an RLS/session edge case that could leave
       // resource_snapshot_required stuck on true after saving.
-      const result = await sb.rpc("save_player_profile", {
+      const result = await playerRpc("save_player_profile", {
         p_profile_id: profile.id,
         p_player_name: playerName,
         p_alliance: alliance,
@@ -809,7 +789,7 @@ async function saveProfile(event){
         resource_snapshot_required: false,
         resource_updated_at: new Date().toISOString()
       };
-      const result = await sb.from("player_profiles").insert(payload).select().single();
+      const result = await playerRpc("create_player_profile", { p_profile: payload });
       data = result.data;
       error = result.error;
     }
@@ -857,7 +837,7 @@ async function submitRequests(){
     alert(t("deadline_passed"));
     return;
   }
-  const { error } = await sb.rpc("submit_slot_requests", {
+  const { error } = await playerRpc("submit_slot_requests", {
     p_event_day: currentDay,
     p_slot_keys: [...selected]
   });

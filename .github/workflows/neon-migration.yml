@@ -1,0 +1,31 @@
+name: Neon migration checks
+on:
+  push:
+    branches: [codex/neon-migration]
+permissions:
+  contents: read
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          node --check --input-type=module < app.js
+          node --check --input-type=module < admin.js
+          node --check --input-type=module < backend.js
+          npm install --no-save playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Select isolated Neon test branch
+        run: |
+          cat > config.js <<'CONFIG'
+          window.KVK_CONFIG = {
+            neonAuthUrl: 'https://ep-bold-darkness-zavemqvz.neonauth.c-2.eu-west-2.aws.neon.tech/neondb/auth',
+            neonDataApiUrl: 'https://ep-bold-darkness-zavemqvz.apirest.c-2.eu-west-2.aws.neon.tech/neondb/rest/v1'
+          };
+          CONFIG
+          python -m http.server 8000 > /tmp/planner-http.log 2>&1 &
+      - run: node scripts/neon-smoke.mjs
