@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-1628-neon-2";
+const CACHE_NAME = "kvk-planner-1628-neon-calculator-1";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,11 @@ const CORE_ASSETS = [
   "./admin.js",
   "./config.js",
   "./backend.js",
+  "./calculator.html",
+  "./calculator.js",
+  "./calculator.css",
+  "./calculator-engine.js",
+  "./building-data.js",
   "./translations.js",
   "./manifest.webmanifest",
   "./favicon.ico",
@@ -61,3 +66,4 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+
