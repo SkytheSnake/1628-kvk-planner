@@ -771,12 +771,12 @@ html[dir="rtl"] .footer-inner{
 /* Alliance palette */
 .alliance-crn{ --alliance-colour:#f06aa6; }
 .alliance-wdg{ --alliance-colour:#5ea9ff; }
-.alliance-era{ --alliance-colour:#52d1bf; }
+.alliance-txc{ --alliance-colour:#52d1bf; }
 .alliance-war{ --alliance-colour:#f0a34f; }
 
 .alliance-count.alliance-crn,
 .alliance-count.alliance-wdg,
-.alliance-count.alliance-era,
+.alliance-count.alliance-txc,
 .alliance-count.alliance-war{
   color:var(--alliance-colour);
   border-color:color-mix(in srgb,var(--alliance-colour) 65%,transparent);
@@ -785,7 +785,7 @@ html[dir="rtl"] .footer-inner{
 
 .admin-slot.confirmed.alliance-crn,
 .admin-slot.confirmed.alliance-wdg,
-.admin-slot.confirmed.alliance-era,
+.admin-slot.confirmed.alliance-txc,
 .admin-slot.confirmed.alliance-war{
   border-color:color-mix(in srgb,var(--alliance-colour) 70%,var(--border));
   background:
@@ -796,7 +796,7 @@ html[dir="rtl"] .footer-inner{
 
 .alliance.alliance-crn,
 .alliance.alliance-wdg,
-.alliance.alliance-era,
+.alliance.alliance-txc,
 .alliance.alliance-war{
   color:var(--alliance-colour);
   border-color:var(--alliance-colour);
@@ -819,7 +819,7 @@ html[dir="rtl"] .footer-inner{
 }
 .pending-player.alliance-crn,
 .pending-player.alliance-wdg,
-.pending-player.alliance-era,
+.pending-player.alliance-txc,
 .pending-player.alliance-war{
   color:var(--text);
 }
