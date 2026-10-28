@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>KvK Planner Admin</title>
-  <link rel="stylesheet" href="style.css?v=20260906-server1628-v8-live-popup-translation">
+  <link rel="stylesheet" href="style.css?v=20261028-txc-1">
 
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -92,13 +92,13 @@
       <div id="allianceConfirmedSummary" class="alliance-confirmed-summary" aria-label="Confirmed slots by alliance">
         <span class="alliance-count alliance-crn">CRN <strong id="countCRN">0</strong></span>
         <span class="alliance-count alliance-wdg">WDG <strong id="countWDG">0</strong></span>
-        <span class="alliance-count alliance-era">ERA <strong id="countERA">0</strong></span>
+        <span class="alliance-count alliance-txc">TXC <strong id="countTXC">0</strong></span>
         <span class="alliance-count alliance-war">WAR <strong id="countWAR">0</strong></span>
       </div>
       <div class="admin-controls">
         <input id="adminSearch" placeholder="Search player / Player ID">
         <select id="allianceFilter">
-          <option value="">All alliances</option><option>CRN</option><option>WDG</option><option>ERA</option><option>WAR</option>
+          <option value="">All alliances</option><option>CRN</option><option>WDG</option><option>TXC</option><option>WAR</option>
         </select>
         <select id="sortApplicants">
           <option value="best">Best fit</option>
@@ -230,7 +230,7 @@
     <label class="field-label"><span id="manualPlayerIdLabel">Player ID</span><input id="manualPlayerId" required inputmode="numeric"></label>
     <label class="field-label"><span id="manualPlayerNameLabel">Player name</span><input id="manualPlayerName" required></label>
     <label class="field-label"><span id="manualAllianceLabel">Alliance</span>
-      <select id="manualAlliance" required><option>CRN</option><option>WDG</option><option>ERA</option><option>WAR</option></select>
+      <select id="manualAlliance" required><option>CRN</option><option>WDG</option><option>TXC</option><option>WAR</option></select>
     </label>
     <div id="manualBookingError" class="form-error" hidden></div>
     <div class="dialog-actions">
@@ -242,7 +242,7 @@
 
 <script src="config.js?v=neon-1"></script>
 <script src="translations.js?v=20260906-server1628-v8-live-popup-translation"></script>
-<script type="module" src="admin.js?v=neon-3"></script>
+<script type="module" src="admin.js?v=20261028-txc-1"></script>
   <script src="pwa-init.js?v=20260906-server1628-v8-live-popup-translation"></script>
 </body>
 </html>
