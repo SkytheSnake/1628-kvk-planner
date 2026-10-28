@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-1628-ownerpass-1";
+const CACHE_NAME = "kvk-planner-1628-calculator-cta-1";
 const CORE_ASSETS = [
   "./",
   "./index.html",
