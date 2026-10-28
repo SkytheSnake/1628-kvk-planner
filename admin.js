@@ -608,7 +608,7 @@ async function changeManagedAdminPassword(event){
   button.disabled=true;
   button.textContent="Changing…";
   try{
-    const {data:accountId,error:lookupError}=await sb.rpc("get_managed_admin_user",{p_admin_role:role},{get:true});
+    const {data:accountId,error:lookupError}=await sb.rpc("get_managed_admin_user",{p_admin_role:role});
     if(lookupError) throw lookupError;
     if(typeof accountId!=="string" || !accountId){
       throw new Error("The selected admin account could not be found. Please refresh and try again.");
