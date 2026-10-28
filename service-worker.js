@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-1628-neon-calculator-1";
+const CACHE_NAME = "kvk-planner-1628-neon-auth-reset-2";
 const CORE_ASSETS = [
   "./",
   "./index.html",
