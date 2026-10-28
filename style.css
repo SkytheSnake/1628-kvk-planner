@@ -867,3 +867,18 @@ html[dir="rtl"] .footer-inner{
   text-transform:uppercase;
 }
 .profile-language-label select{margin-top:0;}
+
+
+.calculator-link{
+  font-weight:800;
+  letter-spacing:.01em;
+  border-width:2px;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 20%,transparent),0 8px 22px color-mix(in srgb,var(--accent) 18%,transparent);
+  background:color-mix(in srgb,var(--accent) 16%,var(--panel));
+  color:var(--text);
+}
+.calculator-link:hover{
+  transform:translateY(-1px);
+  background:color-mix(in srgb,var(--accent) 24%,var(--panel));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent),0 10px 26px color-mix(in srgb,var(--accent) 24%,transparent);
+}
