@@ -39,13 +39,16 @@ function hideRecoveryForm(){
 }
 
 function recoveryRedirectUrl(){
-  return `${window.location.origin}${window.location.pathname}`;
+  const basePath = window.location.pathname.replace(/[^/]*$/, "");
+  return `${window.location.origin}${basePath}admin.html`;
+}
+
+function recoveryToken(){
+  return new URLSearchParams(window.location.search).get("token") || "";
 }
 
 function looksLikeRecoveryUrl(){
-  const params=new URLSearchParams(window.location.search);
-  const hashParams=new URLSearchParams(window.location.hash.replace(/^#/,""));
-  return params.has("token");
+  return recoveryToken().length > 0;
 }
 
 const esc = value => String(value ?? "")
@@ -634,7 +637,14 @@ async function requestPasswordReset(event){
   status.hidden=true;
   status.className="form-error";
 
-  const { error }=await sb.auth.requestPasswordReset({email,
+  if(email.toLowerCase().endsWith("@kvk-planner.local")){
+    status.textContent="King and Minister passwords are managed by the Owner account. Ask the Owner to change this password from Owner Tools.";
+    status.hidden=false;
+    return;
+  }
+
+  const { error }=await sb.auth.requestPasswordReset({
+    email,
     redirectTo:recoveryRedirectUrl()
   });
 
@@ -643,7 +653,7 @@ async function requestPasswordReset(event){
     status.textContent=error.message||"Unable to send password reset email.";
     return;
   }
-  status.textContent="Password reset email sent. Open the link in that email to choose a new password.";
+  status.textContent="Reset email sent by Neon Auth. The link expires after 15 minutes.";
 }
 
 async function submitRecoveredPassword(event){
@@ -666,9 +676,16 @@ async function submitRecoveredPassword(event){
     return;
   }
 
+  const token=recoveryToken();
+  if(!token){
+    status.textContent="This reset link is missing its Neon recovery token. Request a new password reset email.";
+    status.hidden=false;
+    return;
+  }
+
   button.disabled=true;
   button.textContent="Changing…";
-  const { error }=await sb.auth.resetPassword({newPassword:password,token:new URLSearchParams(window.location.search).get("token")});
+  const { error }=await sb.auth.resetPassword({newPassword:password,token});
   button.disabled=false;
   button.textContent="Change password";
 
@@ -686,6 +703,8 @@ async function submitRecoveredPassword(event){
   status.hidden=false;
   alert("Password changed successfully. You can now log in with your new password.");
   window.history.replaceState({},document.title,recoveryRedirectUrl());
+  $("loginIdentity").value="";
+  $("loginPassword").value="";
 }
 
 function bindAuthRecovery(){
