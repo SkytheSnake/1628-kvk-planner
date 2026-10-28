@@ -111,7 +111,7 @@ ALTER TABLE public."admin_users" ADD CONSTRAINT "admin_users_admin_role_check" C
 
 ALTER TABLE public."admin_users" ADD CONSTRAINT "admin_users_pkey" PRIMARY KEY (id);
 
-ALTER TABLE public."appointments" ADD CONSTRAINT "appointments_alliance_check" CHECK (alliance IS NULL OR (alliance = ANY (ARRAY['CRN'::text, 'WDG'::text, 'ERA'::text, 'WAR'::text])));
+ALTER TABLE public."appointments" ADD CONSTRAINT "appointments_alliance_check" CHECK (alliance IS NULL OR (alliance = ANY (ARRAY['CRN'::text, 'WDG'::text, 'TXC'::text, 'WAR'::text])));
 
 ALTER TABLE public."appointments" ADD CONSTRAINT "appointments_event_day_check" CHECK (event_day = ANY (ARRAY['monday'::text, 'tuesday'::text, 'thursday'::text]));
 
@@ -133,7 +133,7 @@ ALTER TABLE public."kvk_archive_cycles" ADD CONSTRAINT "kvk_archive_cycles_cycle
 
 ALTER TABLE public."kvk_archive_cycles" ADD CONSTRAINT "kvk_archive_cycles_pkey" PRIMARY KEY (id);
 
-ALTER TABLE public."player_profiles" ADD CONSTRAINT "player_profiles_alliance_check" CHECK (alliance = ANY (ARRAY['CRN'::text, 'WDG'::text, 'ERA'::text, 'WAR'::text]));
+ALTER TABLE public."player_profiles" ADD CONSTRAINT "player_profiles_alliance_check" CHECK (alliance = ANY (ARRAY['CRN'::text, 'WDG'::text, 'TXC'::text, 'WAR'::text]));
 
 ALTER TABLE public."player_profiles" ADD CONSTRAINT "player_profiles_construction_speedups_check" CHECK (construction_speedups >= 0::numeric);
 
@@ -187,7 +187,7 @@ declare
 begin
   if not public.is_admin() then raise exception 'Admin access required'; end if;
   if p_event_day not in ('monday','tuesday','thursday') then raise exception 'Invalid event day'; end if;
-  if p_alliance not in ('CRN','WDG','ERA','WAR') then raise exception 'Invalid alliance'; end if;
+  if p_alliance not in ('CRN','WDG','TXC','WAR') then raise exception 'Invalid alliance'; end if;
   if trim(coalesce(p_player_id,''))='' or trim(coalesce(p_player_name,''))='' then raise exception 'Player ID and name are required'; end if;
 
   if exists(select 1 from public.day_settings where event_day=p_event_day and is_finalised=true) then
