@@ -141,14 +141,16 @@ async function checkAdmin(){
   const { data: session, error: sessionError } = await sb.auth.getSession();
   if(sessionError || !session?.user) return false;
 
-  const { data, error } = await sb
-    .from("admin_users")
-    .select("admin_role,display_name")
-    .eq("id",session.user.id)
-    .maybeSingle();
+  const { data, error } = await sb.rpc("get_current_admin");
+  if(error) return false;
 
-  if(error || !data) return false;
-  admin=data;
+  const record = Array.isArray(data) ? data[0] : data;
+  if(!record?.admin_role) return false;
+
+  admin = {
+    admin_role: record.admin_role,
+    display_name: record.display_name
+  };
   return true;
 }
 
