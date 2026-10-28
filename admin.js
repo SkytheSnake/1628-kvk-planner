@@ -251,7 +251,7 @@ function filteredRequests(){
 
 function allianceClass(alliance){
   const key=String(alliance||"").toLowerCase();
-  return ["crn","wdg","era","war"].includes(key)?`alliance-${key}`:"";
+  return ["crn","wdg","txc","war"].includes(key)?`alliance-${key}`:"";
 }
 
 function renderAdmin(){
@@ -270,7 +270,7 @@ function renderAdmin(){
 
   let pendingCount=0;
   let confirmedCount=0;
-  const allianceCounts={CRN:0,WDG:0,ERA:0,WAR:0};
+  const allianceCounts={CRN:0,WDG:0,TXC:0,WAR:0};
 
   for(let i=0;i<DAYS[currentDay].slotCount;i++){
     const slot=getSlot(currentDay,i);
@@ -320,7 +320,7 @@ function renderAdmin(){
   $("adminConfirmedBadge").textContent=t("confirmed_count",{n:confirmedCount});
   if($("countCRN")) $("countCRN").textContent=allianceCounts.CRN;
   if($("countWDG")) $("countWDG").textContent=allianceCounts.WDG;
-  if($("countERA")) $("countERA").textContent=allianceCounts.ERA;
+  if($("countTXC")) $("countTXC").textContent=allianceCounts.TXC;
   if($("countWAR")) $("countWAR").textContent=allianceCounts.WAR;
 }
 
@@ -419,7 +419,7 @@ function openManualBooking(){
   $("manualBookingError").hidden=true;
   $("manualPlayerId").value="";
   $("manualPlayerName").value="";
-  $("manualAlliance").value="ERA";
+  $("manualAlliance").value="TXC";
   $("manualBookingDialog").showModal();
 }
 
