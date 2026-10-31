@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-1628-calculator-cta-1";
+const CACHE_NAME = "kvk-planner-1628-mobile-auth-2";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -42,20 +42,23 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
+  const isLocalAppAsset = url.origin === self.location.origin;
+  const networkFirst =
+    request.mode === "navigate" ||
+    request.destination === "document" ||
+    (isLocalAppAsset && /\.(?:js|css|html)$/.test(url.pathname));
 
-  // Network-first for HTML so updates come through more quickly.
-  if (request.mode === "navigate" || request.destination === "document") {
+  if (networkFirst) {
     event.respondWith(
       fetch(request).then(response => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         return response;
-      }).catch(() => caches.match(request).then(r => r || caches.match("./index.html")))
+      }).catch(() => caches.match(request).then(r => r || (request.mode === "navigate" ? caches.match("./index.html") : undefined)))
     );
     return;
   }
 
-  // Cache-first for everything else.
   event.respondWith(
     caches.match(request).then(cached => {
       return cached || fetch(request).then(response => {
@@ -66,4 +69,3 @@ self.addEventListener("fetch", event => {
     })
   );
 });
-
