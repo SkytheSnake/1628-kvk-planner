@@ -1,74 +1,49 @@
 import { createClient } from 'https://esm.sh/@neondatabase/neon-js@0.8.0-beta';
 
 const config = window.KVK_CONFIG;
-const ADMIN_TOKEN_KEY = 'kvkAdminJwt';
+const ADMIN_TOKEN_KEY = 'kvkPlannerAdminToken';
 
-export const backend = createClient({
-  auth: { url: config.neonAuthUrl, allowAnonymous: true },
-  dataApi: { url: config.neonDataApiUrl }
-});
-
-export function setAdminJwt(token){
-  if(typeof token === 'string' && token.split('.').length === 3){
+export function setAdminToken(token){
+  if(typeof token === 'string' && token.length >= 32){
     sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
     return true;
   }
   return false;
 }
 
-export function clearAdminJwt(){
-  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
-}
-
-export function getAdminJwt(){
+export function getAdminToken(){
   return sessionStorage.getItem(ADMIN_TOKEN_KEY);
 }
 
-// Admin database requests use the JWT returned directly by Neon sign-in.
-// This deliberately does not depend on Neon Auth's cross-site session cookie.
-export const adminBackend = createClient({
-  dataApi: {
-    url: config.neonDataApiUrl,
-    getToken: async () => getAdminJwt()
-  }
+export function clearAdminToken(){
+  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+}
+
+function adminFetch(input, init = {}){
+  const headers = new Headers(init.headers || {});
+  const token = getAdminToken();
+  if(token) headers.set('x-kvk-admin-token', token);
+  return fetch(input, { ...init, headers });
+}
+
+export const backend = createClient({
+  auth: { url: config.neonAuthUrl, allowAnonymous: true },
+  dataApi: { url: config.neonDataApiUrl }
 });
 
-export async function directAdminSignIn(email, password){
-  const response = await fetch(`${config.neonAuthUrl}/sign-in/email`, {
-    method: 'POST',
-    mode: 'cors',
-    credentials: 'omit',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify({ email, password })
-  });
-
-  let body = null;
-  try { body = await response.json(); } catch(_) {}
-
-  if(!response.ok){
-    const message = body?.message || body?.error?.message || body?.error || 'Login failed';
-    throw new Error(message);
+// Separate anonymous Data API client for the planner-admin session system.
+// The real admin identity is carried in x-kvk-admin-token and validated in Postgres.
+export const adminBackend = createClient({
+  auth: { url: config.neonAuthUrl, allowAnonymous: true },
+  dataApi: {
+    url: config.neonDataApiUrl,
+    options: {
+      global: {
+        fetch: adminFetch
+      }
+    }
   }
-
-  const headerToken = response.headers.get('set-auth-jwt');
-  const token =
-    body?.session?.access_token ||
-    body?.session?.accessToken ||
-    body?.access_token ||
-    body?.accessToken ||
-    body?.token ||
-    headerToken ||
-    null;
-
-  if(!setAdminJwt(token)){
-    throw new Error('Login succeeded, but Neon did not return an admin JWT.');
-  }
-
-  return body;
-}
+});
 
 // A private device capability keeps Player ID access available without an email account.
 export function playerDeviceId() {
