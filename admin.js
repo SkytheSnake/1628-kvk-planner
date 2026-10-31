@@ -140,21 +140,29 @@ function applyTranslations(){
   });
 }
 
-async function checkAdmin(){
-  const { data: session, error: sessionError } = await sb.auth.getSession();
-  if(sessionError || !session?.user) return false;
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  const { data, error } = await sb.rpc("get_current_admin");
-  if(error) return false;
+async function checkAdmin({ retries = 3 } = {}){
+  for(let attempt=0; attempt<=retries; attempt++){
+    const { data: session, error: sessionError } = await sb.auth.getSession();
 
-  const record = Array.isArray(data) ? data[0] : data;
-  if(!record?.admin_role) return false;
+    if(!sessionError && session?.user){
+      const { data, error } = await sb.rpc("get_current_admin");
+      const record = Array.isArray(data) ? data[0] : data;
 
-  admin = {
-    admin_role: record.admin_role,
-    display_name: record.display_name
-  };
-  return true;
+      if(!error && record?.admin_role){
+        admin = {
+          admin_role: record.admin_role,
+          display_name: record.display_name
+        };
+        return true;
+      }
+    }
+
+    if(attempt<retries) await sleep(300 * (attempt + 1));
+  }
+
+  return false;
 }
 
 
@@ -761,7 +769,7 @@ function bindEvents(){
       return;
     }
 
-    if(!(await checkAdmin())){
+    if(!(await checkAdmin({retries:5}))){
       $("loginError").textContent=t("no_admin");
       $("loginError").hidden=false;
       await sb.auth.signOut();
