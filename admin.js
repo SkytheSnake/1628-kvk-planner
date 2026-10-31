@@ -1,4 +1,4 @@
-import { backend as sb, adminBackend as adminDb, directAdminSignIn, clearAdminJwt, getAdminJwt } from './backend.js?v=direct-jwt-1';
+import { adminBackend as adminDb, setAdminToken, getAdminToken, clearAdminToken } from './backend.js?v=planner-auth-1';
 (() => {
 "use strict";
 
@@ -142,8 +142,8 @@ function applyTranslations(){
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function checkAdmin({ retries = 3 } = {}){
-  if(!getAdminJwt()) return false;
+async function checkAdmin({ retries = 2 } = {}){
+  if(!getAdminToken()) return false;
 
   for(let attempt=0; attempt<=retries; attempt++){
     const { data, error } = await adminDb.rpc("get_current_admin");
@@ -157,7 +157,7 @@ async function checkAdmin({ retries = 3 } = {}){
       return true;
     }
 
-    if(attempt<retries) await sleep(250 * (attempt + 1));
+    if(attempt<retries) await sleep(200 * (attempt + 1));
   }
 
   return false;
@@ -179,8 +179,6 @@ function setAdminSection(view="planner"){
 }
 
 function showAdminApp(show){
-  if(recoveryMode && show) return;
-  $("passwordRecoveryCard").hidden=true;
   $("adminLoginCard").hidden=show;
   $("adminApp").hidden=!show;
   $("logoutBtn").hidden=!show;
@@ -595,37 +593,56 @@ async function archiveCurrentCycle(){
 async function changeManagedAdminPassword(event){
   event.preventDefault();
   if(admin?.admin_role!=="owner") return;
+
   const role=$("passwordTargetRole").value;
   const password=$("newAdminPassword").value;
   const status=$("adminPasswordStatus");
   const button=$("changeAdminPasswordBtn");
+
   status.hidden=true;
   status.className="password-status";
-  if(!["king","minister"].includes(role)) return;
+
+  if(!["owner","king","minister"].includes(role)) return;
+
   if(password.length<8 || password.length>128){
     status.textContent="Password must be between 8 and 128 characters.";
-    status.classList.add("error"); status.hidden=false; return;
+    status.classList.add("error");
+    status.hidden=false;
+    return;
   }
+
   if(password!==$("confirmAdminPassword").value){
     status.textContent="The passwords do not match.";
-    status.classList.add("error"); status.hidden=false; return;
+    status.classList.add("error");
+    status.hidden=false;
+    return;
   }
-  if(!confirm(`Change the ${role === "king" ? "King" : "Minister"} account password?`)) return;
+
+  const label=role==="owner"?"Owner":role==="king"?"King":"Minister";
+  if(!confirm(`Change the ${label} account password?`)) return;
+
   button.disabled=true;
   button.textContent="Changing…";
+
   try{
-    const {data:accountId,error:lookupError}=await adminDb.rpc("get_managed_admin_user",{p_admin_role:role});
-    if(lookupError) throw lookupError;
-    if(typeof accountId!=="string" || !accountId){
-      throw new Error("The selected admin account could not be found. Please refresh and try again.");
-    }
-    const {error}=await sb.auth.admin.setUserPassword({userId:accountId,newPassword:password});
+    const { error }=await adminDb.rpc("planner_change_admin_password",{
+      p_admin_role:role,
+      p_new_password:password
+    });
+
     if(error) throw error;
-    const {error:sessionError}=await sb.auth.admin.revokeUserSessions({userId:accountId});
-    if(sessionError) throw new Error("Password changed, but existing sessions could not be signed out. "+sessionError.message);
+
     $("adminPasswordForm").reset();
-    status.textContent=`${role === "king" ? "King" : "Minister"} password changed successfully.`;
+    status.textContent=`${label} password changed successfully.`;
     status.classList.add("success");
+
+    if(role==="owner"){
+      status.textContent+=" You have been signed out. Log in again with the new password.";
+      await adminDb.rpc("planner_admin_logout").catch(()=>{});
+      clearAdminToken();
+      admin=null;
+      showAdminApp(false);
+    }
   }catch(error){
     status.textContent=error.message || "Unable to change password.";
     status.classList.add("error");
@@ -636,87 +653,7 @@ async function changeManagedAdminPassword(event){
   }
 }
 
-async function requestPasswordReset(event){
-  event.preventDefault();
-  const status=$("forgotPasswordStatus");
-  const email=$("forgotPasswordEmail").value.trim();
-  status.hidden=true;
-  status.className="form-error";
 
-  if(email.toLowerCase().endsWith("@kvk-planner.local")){
-    status.textContent="King and Minister passwords are managed by the Owner account. Ask the Owner to change this password from Owner Tools.";
-    status.hidden=false;
-    return;
-  }
-
-  const { error }=await sb.auth.requestPasswordReset({
-    email,
-    redirectTo:recoveryRedirectUrl()
-  });
-
-  status.hidden=false;
-  if(error){
-    status.textContent=error.message||"Unable to send password reset email.";
-    return;
-  }
-  status.textContent="Reset email sent by Neon Auth. The link expires after 15 minutes.";
-}
-
-async function submitRecoveredPassword(event){
-  event.preventDefault();
-  const password=$("recoveryPassword").value;
-  const confirmPassword=$("recoveryPasswordConfirm").value;
-  const status=$("passwordRecoveryStatus");
-  const button=$("passwordRecoverySubmit");
-  status.hidden=true;
-  status.className="form-error";
-
-  if(password.length<8){
-    status.textContent="Password must be at least 8 characters.";
-    status.hidden=false;
-    return;
-  }
-  if(password!==confirmPassword){
-    status.textContent="The passwords do not match.";
-    status.hidden=false;
-    return;
-  }
-
-  const token=recoveryToken();
-  if(!token){
-    status.textContent="This reset link is missing its Neon recovery token. Request a new password reset email.";
-    status.hidden=false;
-    return;
-  }
-
-  button.disabled=true;
-  button.textContent="Changing…";
-  const { error }=await sb.auth.resetPassword({newPassword:password,token});
-  button.disabled=false;
-  button.textContent="Change password";
-
-  if(error){
-    status.textContent=error.message||"Unable to change password.";
-    status.hidden=false;
-    return;
-  }
-
-  await sb.auth.signOut();
-  hideRecoveryForm();
-  $("adminLoginCard").hidden=false;
-  $("loginPassword").value="";
-  status.textContent="Password changed successfully.";
-  status.hidden=false;
-  alert("Password changed successfully. You can now log in with your new password.");
-  window.history.replaceState({},document.title,recoveryRedirectUrl());
-  $("loginIdentity").value="";
-  $("loginPassword").value="";
-}
-
-function bindAuthRecovery(){
-  if(looksLikeRecoveryUrl()) showRecoveryForm();
-
-}
 
 function bindEvents(){
   $("adminPasswordForm").addEventListener("submit",changeManagedAdminPassword);
@@ -735,39 +672,43 @@ function bindEvents(){
   $("manualAddBtn").addEventListener("click",openManualBooking);
   $("manualBookingForm").addEventListener("submit",submitManualBooking);
   $("resetKvkBtn").addEventListener("click",resetKvk);
-  $("forgotPasswordBtn").addEventListener("click",()=>{
-    $("loginForm").hidden=true;
-    $("forgotPasswordForm").hidden=false;
-    const raw=$("loginIdentity").value.trim();
-    if(raw.includes("@")) $("forgotPasswordEmail").value=raw;
-  });
-  $("backToLoginBtn").addEventListener("click",()=>{
-    $("forgotPasswordForm").hidden=true;
-    $("loginForm").hidden=false;
-  });
-  $("forgotPasswordForm").addEventListener("submit",requestPasswordReset);
-  $("passwordRecoveryForm").addEventListener("submit",submitRecoveredPassword);
   $("loginForm").addEventListener("submit",async event=>{
     event.preventDefault();
     $("loginError").hidden=true;
 
-    const raw=$("loginIdentity").value.trim();
-    const email=raw.includes("@")
-      ? raw
-      : `${raw.toLowerCase().replace(/[^a-z0-9._-]/g,"")}@kvk-planner.local`;
+    const identity=$("loginIdentity").value.trim();
+    const password=$("loginPassword").value;
 
-    try{
-      await directAdminSignIn(email,$("loginPassword").value);
-    }catch(error){
+    const { data, error }=await adminDb.rpc("planner_admin_login",{
+      p_identity:identity,
+      p_password:password
+    });
+
+    if(error){
       $("loginError").textContent=error.message || t("login_failed");
       $("loginError").hidden=false;
       return;
     }
 
-    if(!(await checkAdmin({retries:5}))){
+    const record=Array.isArray(data)?data[0]:data;
+
+    if(record?.error_message || !record?.session_token){
+      $("loginError").textContent=record?.error_message || t("login_failed");
+      $("loginError").hidden=false;
+      return;
+    }
+
+    setAdminToken(record.session_token);
+    admin={
+      admin_role:record.admin_role,
+      display_name:record.display_name
+    };
+
+    if(!(await checkAdmin({retries:2}))){
       $("loginError").textContent=t("no_admin");
       $("loginError").hidden=false;
-      clearAdminJwt();
+      clearAdminToken();
+      admin=null;
       return;
     }
 
@@ -776,11 +717,12 @@ function bindEvents(){
   });
 
   $("logoutBtn").addEventListener("click",async()=>{
-    clearAdminJwt();
-    await sb.auth.signOut().catch(()=>{});
+    await adminDb.rpc("planner_admin_logout").catch(()=>{});
+    clearAdminToken();
     admin=null;
     showAdminApp(false);
   });
+
 
   document.querySelectorAll("[data-close]").forEach(btn=>{
     btn.addEventListener("click",()=>$(btn.dataset.close).close());
@@ -805,16 +747,15 @@ async function start(){
   initTheme();
   initLanguage();
   applyTranslations();
-  bindAuthRecovery();
   bindEvents();
 
   if(recoveryMode) return;
 
-  if(getAdminJwt() && await checkAdmin()){
+  if(getAdminToken() && await checkAdmin()){
     showAdminApp(true);
     await loadAdminData();
   }else{
-    clearAdminJwt();
+    clearAdminToken();
     showAdminApp(false);
   }
 }
