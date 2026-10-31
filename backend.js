@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@neondatabase/neon-js@0.7.0-beta';
+import { createClient as createClientV07 } from 'https://esm.sh/@neondatabase/neon-js@0.7.0-beta';
+import { createClient as createClientV08 } from 'https://esm.sh/@neondatabase/neon-js@0.8.0-beta';
 
 const config = window.KVK_CONFIG;
 
@@ -35,14 +36,14 @@ export function getStoredAdminAccessToken() {
   return token;
 }
 
-export const backend = createClient({
+export const backend = createClientV07({
   auth: { url: config.neonAuthUrl, allowAnonymous: true },
   dataApi: { url: config.neonDataApiUrl }
 });
 
 // Admin database traffic uses the JWT returned by sign-in directly.
 // This avoids relying on cross-site auth cookies that mobile Safari can block.
-export const adminBackend = createClient({
+export const adminBackend = createClientV08({
   dataApi: {
     url: config.neonDataApiUrl,
     getToken: async () => getStoredAdminAccessToken()
