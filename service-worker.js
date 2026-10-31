@@ -1,4 +1,4 @@
-const CACHE_NAME = "kvk-planner-1628-direct-jwt-1";
+const CACHE_NAME = "kvk-planner-1628-planner-auth-1";
 const CORE_ASSETS = [
   "./",
   "./index.html",
