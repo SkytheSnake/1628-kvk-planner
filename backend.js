@@ -31,8 +31,6 @@ export const backend = createClient({
   dataApi: { url: config.neonDataApiUrl }
 });
 
-// Separate anonymous Data API client for the planner-admin session system.
-// The real admin identity is carried in x-kvk-admin-token and validated in Postgres.
 export const adminBackend = createClient({
   auth: { url: config.neonAuthUrl, allowAnonymous: true },
   dataApi: {
@@ -45,7 +43,6 @@ export const adminBackend = createClient({
   }
 });
 
-// A private device capability keeps Player ID access available without an email account.
 export function playerDeviceId() {
   let id = localStorage.getItem('kvkNeonDeviceId');
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '')) {
