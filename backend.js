@@ -1,9 +1,52 @@
 import { createClient } from 'https://esm.sh/@neondatabase/neon-js@0.7.0-beta';
 
 const config = window.KVK_CONFIG;
+
+const ADMIN_TOKEN_KEY = 'kvkAdminAccessToken';
+
+function tokenExpiry(token) {
+  try {
+    const payload = token.split('.')[1];
+    const padded = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    return Number(JSON.parse(atob(padded)).exp || 0);
+  } catch {
+    return 0;
+  }
+}
+
+export function setAdminAccessToken(token) {
+  if (typeof token === 'string' && token.split('.').length === 3) {
+    sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
+  }
+}
+
+export function clearAdminAccessToken() {
+  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+}
+
+export function getStoredAdminAccessToken() {
+  const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+  if (!token) return null;
+  const exp = tokenExpiry(token);
+  if (!exp || exp <= Math.floor(Date.now() / 1000) + 15) {
+    clearAdminAccessToken();
+    return null;
+  }
+  return token;
+}
+
 export const backend = createClient({
   auth: { url: config.neonAuthUrl, allowAnonymous: true },
   dataApi: { url: config.neonDataApiUrl }
+});
+
+// Admin database traffic uses the JWT returned by sign-in directly.
+// This avoids relying on cross-site auth cookies that mobile Safari can block.
+export const adminBackend = createClient({
+  dataApi: {
+    url: config.neonDataApiUrl,
+    getToken: async () => getStoredAdminAccessToken()
+  }
 });
 
 // A private device capability keeps Player ID access available without an email account.
