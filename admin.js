@@ -1,4 +1,4 @@
-import { backend as sb } from './backend.js?v=neon-1';
+import { backend as sb, adminBackend as adminDb, setAdminAccessToken, clearAdminAccessToken, getStoredAdminAccessToken } from './backend.js?v=mobile-auth-3';
 (() => {
 "use strict";
 
@@ -142,24 +142,41 @@ function applyTranslations(){
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+function extractAccessToken(data){
+  return data?.session?.access_token || data?.session?.accessToken || data?.access_token || null;
+}
+
+async function hydrateAdminTokenFromSession(){
+  if(getStoredAdminAccessToken()) return true;
+
+  const { data, error } = await sb.auth.getSession();
+  if(error || !data?.session) return false;
+
+  const token=extractAccessToken(data);
+  if(!token) return false;
+
+  setAdminAccessToken(token);
+  return true;
+}
+
 async function checkAdmin({ retries = 3 } = {}){
+  if(!getStoredAdminAccessToken()){
+    await hydrateAdminTokenFromSession();
+  }
+
   for(let attempt=0; attempt<=retries; attempt++){
-    const { data: session, error: sessionError } = await sb.auth.getSession();
+    const { data, error } = await adminDb.rpc("get_current_admin");
+    const record = Array.isArray(data) ? data[0] : data;
 
-    if(!sessionError && session?.user){
-      const { data, error } = await sb.rpc("get_current_admin");
-      const record = Array.isArray(data) ? data[0] : data;
-
-      if(!error && record?.admin_role){
-        admin = {
-          admin_role: record.admin_role,
-          display_name: record.display_name
-        };
-        return true;
-      }
+    if(!error && record?.admin_role){
+      admin = {
+        admin_role: record.admin_role,
+        display_name: record.display_name
+      };
+      return true;
     }
 
-    if(attempt<retries) await sleep(300 * (attempt + 1));
+    if(attempt<retries) await sleep(250 * (attempt + 1));
   }
 
   return false;
@@ -207,15 +224,15 @@ function showAdminApp(show){
 
 async function loadAdminData(){
   const [requestResult,appointmentResult,rejectionResult,activityResult,settingsResult,historyResult]=await Promise.all([
-    sb.from("slot_requests")
+    adminDb.from("slot_requests")
       .select("id,slot_key,event_day,minister_role,status,profile_id,player_profiles(player_id,player_name,alliance,truegold,general_speedups,research_speedups,training_speedups,construction_speedups,resource_updated_at,admin_note)")
       .eq("event_day",currentDay)
       .in("status",["pending","confirmed"]),
-    sb.from("appointments").select("*").eq("event_day",currentDay),
-    sb.from("rejection_log").select("*").order("rejected_at",{ascending:false}).limit(200),
-    sb.from("admin_activity_log").select("*").order("created_at",{ascending:false}).limit(100),
-    sb.from("day_settings").select("*"),
-    sb.from("kvk_archive_cycles").select("id,cycle_start,archived_at,archived_by,kvk_archive_appointments(id,event_day,slot_key,minister_role,player_name,alliance)").order("archived_at",{ascending:false}).limit(20)
+    adminDb.from("appointments").select("*").eq("event_day",currentDay),
+    adminDb.from("rejection_log").select("*").order("rejected_at",{ascending:false}).limit(200),
+    adminDb.from("admin_activity_log").select("*").order("created_at",{ascending:false}).limit(100),
+    adminDb.from("day_settings").select("*"),
+    adminDb.from("kvk_archive_cycles").select("id,cycle_start,archived_at,archived_by,kvk_archive_appointments(id,event_day,slot_key,minister_role,player_name,alliance)").order("archived_at",{ascending:false}).limit(20)
   ]);
 
   if(requestResult.error) throw requestResult.error;
@@ -407,7 +424,7 @@ function renderApplicants(){
 }
 
 async function awardRequest(requestId){
-  const { error }=await sb.rpc("award_slot",{p_request_id:requestId});
+  const { error }=await adminDb.rpc("award_slot",{p_request_id:requestId});
   if(error){alert(error.message);return}
   await loadAdminData();
   renderApplicants();
@@ -415,7 +432,7 @@ async function awardRequest(requestId){
 
 async function rejectRequest(requestId){
   const reason=prompt(t("reason")+" (optional):")||null;
-  const { error }=await sb.rpc("reject_slot_request",{p_request_id:requestId,p_reason:reason});
+  const { error }=await adminDb.rpc("reject_slot_request",{p_request_id:requestId,p_reason:reason});
   if(error){alert(error.message);return}
   await loadAdminData();
   renderApplicants();
@@ -439,7 +456,7 @@ async function submitManualBooking(event){
   const conflict=requests.find(r=>r.player_profiles?.player_id===$("manualPlayerId").value.trim() && r.status==="confirmed" && r.event_day===currentDay);
   if(conflict && !confirm(t("manual_conflict_confirm"))) return;
 
-  const { error }=await sb.rpc("admin_manual_assign",{
+  const { error }=await adminDb.rpc("admin_manual_assign",{
     p_event_day:currentDay,
     p_slot_key:activeSlot.key,
     p_player_id:$("manualPlayerId").value.trim(),
@@ -493,7 +510,7 @@ function renderRejectionLog(){
 }
 
 async function markContacted(logId){
-  const { error }=await sb.rpc("mark_rejection_contacted",{p_log_id:logId});
+  const { error }=await adminDb.rpc("mark_rejection_contacted",{p_log_id:logId});
   if(error){alert(error.message);return}
   await loadAdminData();
 }
@@ -503,7 +520,7 @@ async function resetKvk(){
   const typed=prompt(t("reset_help")+"\n\n"+t("reset_confirm")+":");
   if(typed!=="RESET") return;
 
-  const { error }=await sb.rpc("reset_kvk_cycle");
+  const { error }=await adminDb.rpc("reset_kvk_cycle");
   if(error){alert(error.message);return}
 
   await loadAdminData();
@@ -512,7 +529,7 @@ async function resetKvk(){
 
 
 async function saveAdminNote(profileId,note){
-  const { error }=await sb.rpc("set_admin_note",{p_profile_id:profileId,p_note:note});
+  const { error }=await adminDb.rpc("set_admin_note",{p_profile_id:profileId,p_note:note});
   if(error){alert(error.message);return}
   alert(t("notes_saved"));
   await loadAdminData();
@@ -562,7 +579,7 @@ function renderHistory(){
 
 async function finaliseDay(){
   if(!confirm(t("finalise_confirm"))) return;
-  const { error }=await sb.rpc("set_day_finalised",{p_event_day:currentDay,p_finalised:true});
+  const { error }=await adminDb.rpc("set_day_finalised",{p_event_day:currentDay,p_finalised:true});
   if(error){alert(error.message);return}
   await loadAdminData();
 }
@@ -570,13 +587,13 @@ async function finaliseDay(){
 async function reopenDay(){
   if(admin?.admin_role!=="owner") return;
   if(!confirm(t("reopen_confirm"))) return;
-  const { error }=await sb.rpc("set_day_finalised",{p_event_day:currentDay,p_finalised:false});
+  const { error }=await adminDb.rpc("set_day_finalised",{p_event_day:currentDay,p_finalised:false});
   if(error){alert(error.message);return}
   await loadAdminData();
 }
 
 async function undoLastAction(){
-  const { data,error }=await sb.rpc("undo_last_admin_action");
+  const { data,error }=await adminDb.rpc("undo_last_admin_action");
   if(error){alert(error.message);return}
   if(!data){alert(t("nothing_to_undo"));return}
   alert(t("undo_done"));
@@ -587,7 +604,7 @@ async function undoLastAction(){
 async function archiveCurrentCycle(){
   if(admin?.admin_role!=="owner") return;
   if(!confirm(t("archive_help"))) return;
-  const { error }=await sb.rpc("archive_current_kvk");
+  const { error }=await adminDb.rpc("archive_current_kvk");
   if(error){alert(error.message);return}
   alert(t("archive_done"));
   await loadAdminData();
@@ -616,7 +633,7 @@ async function changeManagedAdminPassword(event){
   button.disabled=true;
   button.textContent="Changing…";
   try{
-    const {data:accountId,error:lookupError}=await sb.rpc("get_managed_admin_user",{p_admin_role:role});
+    const {data:accountId,error:lookupError}=await adminDb.rpc("get_managed_admin_user",{p_admin_role:role});
     if(lookupError) throw lookupError;
     if(typeof accountId!=="string" || !accountId){
       throw new Error("The selected admin account could not be found. Please refresh and try again.");
@@ -758,7 +775,7 @@ function bindEvents(){
       ? raw
       : `${raw.toLowerCase().replace(/[^a-z0-9._-]/g,"")}@kvk-planner.local`;
 
-    const { error }=await sb.auth.signIn.email({
+    const { data, error }=await sb.auth.signIn.email({
       email,
       password:$("loginPassword").value
     });
@@ -769,10 +786,14 @@ function bindEvents(){
       return;
     }
 
+    const accessToken=extractAccessToken(data);
+    if(accessToken) setAdminAccessToken(accessToken);
+
     if(!(await checkAdmin({retries:5}))){
       $("loginError").textContent=t("no_admin");
       $("loginError").hidden=false;
-      await sb.auth.signOut();
+      clearAdminAccessToken();
+      await sb.auth.signOut().catch(()=>{});
       return;
     }
 
@@ -781,7 +802,8 @@ function bindEvents(){
   });
 
   $("logoutBtn").addEventListener("click",async()=>{
-    await sb.auth.signOut();
+    clearAdminAccessToken();
+    await sb.auth.signOut().catch(()=>{});
     admin=null;
     showAdminApp(false);
   });
