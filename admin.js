@@ -1,4 +1,4 @@
-import { backend as sb, adminBackend as adminDb, setAdminAccessToken, clearAdminAccessToken, getStoredAdminAccessToken } from './backend.js?v=mobile-auth-3';
+import { backend as sb, adminBackend as adminDb } from './backend.js?v=neon-unified-1';
 (() => {
 "use strict";
 
@@ -142,38 +142,21 @@ function applyTranslations(){
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-function extractAccessToken(data){
-  return data?.session?.access_token || data?.session?.accessToken || data?.access_token || null;
-}
-
-async function hydrateAdminTokenFromSession(){
-  if(getStoredAdminAccessToken()) return true;
-
-  const { data, error } = await sb.auth.getSession();
-  if(error || !data?.session) return false;
-
-  const token=extractAccessToken(data);
-  if(!token) return false;
-
-  setAdminAccessToken(token);
-  return true;
-}
-
 async function checkAdmin({ retries = 3 } = {}){
-  if(!getStoredAdminAccessToken()){
-    await hydrateAdminTokenFromSession();
-  }
-
   for(let attempt=0; attempt<=retries; attempt++){
-    const { data, error } = await adminDb.rpc("get_current_admin");
-    const record = Array.isArray(data) ? data[0] : data;
+    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
 
-    if(!error && record?.admin_role){
-      admin = {
-        admin_role: record.admin_role,
-        display_name: record.display_name
-      };
-      return true;
+    if(!sessionError && sessionData?.user){
+      const { data, error } = await adminDb.rpc("get_current_admin");
+      const record = Array.isArray(data) ? data[0] : data;
+
+      if(!error && record?.admin_role){
+        admin = {
+          admin_role: record.admin_role,
+          display_name: record.display_name
+        };
+        return true;
+      }
     }
 
     if(attempt<retries) await sleep(250 * (attempt + 1));
@@ -786,13 +769,9 @@ function bindEvents(){
       return;
     }
 
-    const accessToken=extractAccessToken(data);
-    if(accessToken) setAdminAccessToken(accessToken);
-
     if(!(await checkAdmin({retries:5}))){
       $("loginError").textContent=t("no_admin");
       $("loginError").hidden=false;
-      clearAdminAccessToken();
       await sb.auth.signOut().catch(()=>{});
       return;
     }
@@ -802,7 +781,6 @@ function bindEvents(){
   });
 
   $("logoutBtn").addEventListener("click",async()=>{
-    clearAdminAccessToken();
     await sb.auth.signOut().catch(()=>{});
     admin=null;
     showAdminApp(false);
