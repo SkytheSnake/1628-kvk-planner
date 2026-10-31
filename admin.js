@@ -1,4 +1,4 @@
-import { backend as sb, adminBackend as adminDb } from './backend.js?v=neon-unified-1';
+import { backend as sb, adminBackend as adminDb, directAdminSignIn, clearAdminJwt, getAdminJwt } from './backend.js?v=direct-jwt-1';
 (() => {
 "use strict";
 
@@ -143,20 +143,18 @@ function applyTranslations(){
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function checkAdmin({ retries = 3 } = {}){
+  if(!getAdminJwt()) return false;
+
   for(let attempt=0; attempt<=retries; attempt++){
-    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+    const { data, error } = await adminDb.rpc("get_current_admin");
+    const record = Array.isArray(data) ? data[0] : data;
 
-    if(!sessionError && sessionData?.user){
-      const { data, error } = await adminDb.rpc("get_current_admin");
-      const record = Array.isArray(data) ? data[0] : data;
-
-      if(!error && record?.admin_role){
-        admin = {
-          admin_role: record.admin_role,
-          display_name: record.display_name
-        };
-        return true;
-      }
+    if(!error && record?.admin_role){
+      admin = {
+        admin_role: record.admin_role,
+        display_name: record.display_name
+      };
+      return true;
     }
 
     if(attempt<retries) await sleep(250 * (attempt + 1));
@@ -758,13 +756,10 @@ function bindEvents(){
       ? raw
       : `${raw.toLowerCase().replace(/[^a-z0-9._-]/g,"")}@kvk-planner.local`;
 
-    const { data, error }=await sb.auth.signIn.email({
-      email,
-      password:$("loginPassword").value
-    });
-
-    if(error){
-      $("loginError").textContent=t("login_failed");
+    try{
+      await directAdminSignIn(email,$("loginPassword").value);
+    }catch(error){
+      $("loginError").textContent=error.message || t("login_failed");
       $("loginError").hidden=false;
       return;
     }
@@ -772,7 +767,7 @@ function bindEvents(){
     if(!(await checkAdmin({retries:5}))){
       $("loginError").textContent=t("no_admin");
       $("loginError").hidden=false;
-      await sb.auth.signOut().catch(()=>{});
+      clearAdminJwt();
       return;
     }
 
@@ -781,6 +776,7 @@ function bindEvents(){
   });
 
   $("logoutBtn").addEventListener("click",async()=>{
+    clearAdminJwt();
     await sb.auth.signOut().catch(()=>{});
     admin=null;
     showAdminApp(false);
@@ -814,10 +810,11 @@ async function start(){
 
   if(recoveryMode) return;
 
-  if(await checkAdmin()){
+  if(getAdminJwt() && await checkAdmin()){
     showAdminApp(true);
     await loadAdminData();
   }else{
+    clearAdminJwt();
     showAdminApp(false);
   }
 }
