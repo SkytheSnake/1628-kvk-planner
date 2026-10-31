@@ -716,10 +716,10 @@ function bindEvents(){
     await loadAdminData();
   });
 
-  $("logoutBtn").addEventListener("click",async()=>{
-    await adminDb.rpc("planner_admin_logout").catch(()=>{});
+  $("logoutBtn").addEventListener("click",()=>{
     clearAdminToken();
     admin=null;
+    $("loginPassword").value="";
     showAdminApp(false);
   });
 
